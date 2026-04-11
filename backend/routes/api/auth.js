@@ -8,7 +8,7 @@ var router = express.Router();
 router.post("/login", async function (req, res, _) {
   var body = req.body;
 
-  if (typeof body.username != "string" && typeof body.password != "string") {
+  if (typeof body.username != "string" || typeof body.password != "string") {
     return res.status(401).send({
       status: 401,
       success: false,
@@ -36,8 +36,8 @@ router.post("/login", async function (req, res, _) {
   if (valid_password) {
     var paylaod = {
       username: body.username,
-      role: users.role,
-      assigned_exam_id: body.assigned_exam_id,
+      role: user.role,
+      assigned_exam_id: user.assigned_exam_id,
     };
 
     var token = jwt.sign(paylaod, process.env.JWT_SECRET, {
@@ -53,6 +53,9 @@ router.post("/login", async function (req, res, _) {
       success: true,
       data: {
         token,
+        username: body.username,
+        role: user.role,
+        assigned_exam_id: user.assigned_exam_id,
       },
     });
   }

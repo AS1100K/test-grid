@@ -44,7 +44,7 @@ CREATE TABLE questions (
 );
 
 CREATE TABLE users (
-    user_id VARCHAR(50) PRIMARY KEY,
+    username VARCHAR(50) PRIMARY KEY,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('super_admin', 'admin', 'student'),
     assigned_exam_id INT,
@@ -55,15 +55,15 @@ CREATE TABLE users (
 CREATE TABLE test_sessions (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
-    student_user_id VARCHAR(50) NOT NULL,
+    student_username VARCHAR(50) NOT NULL,
     exam_id INT NOT NULL,
 
     total_marks INT DEFAULT NULL,
     status ENUM('in_progress', 'submitted', 'terminated') DEFAULT 'in_progress',
 
-    FOREIGN KEY (student_user_id) REFERENCES users(user_id),
+    FOREIGN KEY (student_username) REFERENCES users(username),
     FOREIGN KEY (exam_id) REFERENCES exams(id),
-    UNIQUE (student_user_id, exam_id),
+    UNIQUE (student_username, exam_id),
     CHECK (total_marks IS NULL or status = 'submitted')
 );
 

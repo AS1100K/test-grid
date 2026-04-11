@@ -13,4 +13,4 @@ ENV PORT=5000
 
 EXPOSE 5000
 
-CMD ["node", "./scripts/create_default_user.js", "&&", "npm", "run", "watch"]
+CMD ["npm", "run", "init-and-watch"]

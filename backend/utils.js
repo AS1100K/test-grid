@@ -1,6 +1,57 @@
 const pool = require("./services/db");
 const jwt = require("jsonwebtoken");
 
+async function hasPermissions(authorization_header, allowed_role) {
+  if (
+    typeof authorization_header != "string" ||
+    typeof allowed_role != "string"
+  ) {
+    return {
+      status: 400,
+      success: false,
+      message:
+        "Internal Server Error: Invalid datatype of either header or role.",
+    };
+  }
+
+  if (!authorization_header.startsWith("Bearer ")) {
+    return {
+      status: 401,
+      success: false,
+      message:
+        "Invalid Authorization Header. Expected format: 'Bearer <token>'.",
+    };
+  }
+
+  const token = authorization_header.slice(7);
+  const verification = await verifyAccessToken(token);
+
+  if (!verification || verification.success !== true) {
+    return (
+      verification || {
+        status: 401,
+        success: false,
+        message: "Invalid Access Token.",
+      }
+    );
+  }
+
+  const { role } = verification.data;
+  if (role !== allowed_role) {
+    return {
+      status: 403,
+      success: false,
+      message: "Forbidden: User does not have the required role.",
+    };
+  }
+
+  return {
+    status: 200,
+    success: true,
+    data: verification.data,
+  };
+}
+
 async function verifyAccessToken(token) {
   if (typeof token != "string") {
     return {
@@ -69,4 +120,4 @@ async function verifyAccessToken(token) {
   }
 }
 
-module.exports = { verifyAccessToken };
+module.exports = { hasPermissions, verifyAccessToken };

@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node ./bin/www",
     "watch": "nodemon ./bin/www",
-    "init-and-watch": "node ./scripts/create_default_user.js && npm run watch"
+    "init-and-watch": "node ./scripts/create_default_user.js && npm run watch",
+    "test": "NODE_OPTIONS='--experimental-vm-modules' jest"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -14,8 +15,13 @@
     "cors": "^2.8.6",
     "debug": "~2.6.9",
     "express": "^4.22.1",
+    "express-fileupload": "^1.5.2",
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
-    "mysql2": "^3.22.0"
+    "mysql2": "^3.22.0",
+    "officeparser": "^6.0.7"
+  },
+  "devDependencies": {
+    "jest": "^30.3.0"
   }
 }

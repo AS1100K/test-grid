@@ -7,7 +7,8 @@
     "start": "node ./bin/www",
     "watch": "nodemon ./bin/www",
     "init-and-watch": "node ./scripts/create_default_user.js && npm run watch",
-    "test": "NODE_OPTIONS='--experimental-vm-modules' jest"
+    "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
+    "lint": "eslint ."
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -22,6 +23,8 @@
     "officeparser": "^6.0.7"
   },
   "devDependencies": {
+    "@eslint/js": "^9.19.0",
+    "eslint": "^10.2.0",
     "jest": "^30.3.0"
   }
 }

@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import useToken from "../components/useToken";
 import fetch_ from "../utils";
 import { AuthContext } from "./useAuth";
+import useNotification from "./useNotification";
 
 export default function AuthProvider({ children }) {
+  const { addNotification } = useNotification();
+
   const { token, setToken, removeToken } = useToken();
   const [user, setUser] = useState(null);
 
@@ -45,6 +48,7 @@ export default function AuthProvider({ children }) {
       return true;
     }
 
+    addNotification({ message: res.message });
     return false;
   };
 

@@ -22,12 +22,11 @@ router.post("/login", async function (req, res, _) {
     [body.username],
   );
 
-  if (users.length > 1) {
-    return res.status(500).send({
-      status: 500,
+  if (users.length != 1) {
+    return res.status(400).send({
+      status: 400,
       success: false,
-      message:
-        "Unexpected Internal Server Error. Found multiple entries of same username.",
+      message: "Either username or password is incorrect.",
     });
   }
 

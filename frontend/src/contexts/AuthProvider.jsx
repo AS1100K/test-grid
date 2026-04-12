@@ -1,10 +1,9 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import useToken from "../components/useToken";
 import fetch_ from "../utils";
+import { AuthContext } from "./useAuth";
 
-const AuthContext = createContext(null);
-
-export function AuthProvider({ children }) {
+export default function AuthProvider({ children }) {
   const { token, setToken, removeToken } = useToken();
   const [user, setUser] = useState(null);
 
@@ -23,8 +22,10 @@ export function AuthProvider({ children }) {
       return true;
     }
 
-    setUser(false);
+    setUser(null);
     removeToken();
+
+    return false;
   };
 
   const login = async (username, password) => {
@@ -68,13 +69,4 @@ export function AuthProvider({ children }) {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider.");
-  }
-
-  return context;
 }

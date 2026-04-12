@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route } from "react-router";
 import Login from "./pages/Login.jsx";
-import { AuthProvider } from "./contexts/AuthContext.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import Dashboard from "./pages/Dashboard.jsx";
+import AuthProvider from "./contexts/AuthProvider.jsx";
 
 function App() {
   return (
@@ -12,7 +13,7 @@ function App() {
             index
             element={
               <ProtectedRoute>
-                <h1>Hello World!</h1>
+                <Dashboard />
               </ProtectedRoute>
             }
           />

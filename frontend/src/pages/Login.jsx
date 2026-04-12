@@ -7,10 +7,9 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-
 import { useEffect, useState } from "react";
-import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router";
+import useAuth from "../contexts/useAuth";
 
 function Login() {
   useEffect(() => {

@@ -8,7 +8,14 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route index element={<h1>Hello World!</h1>} />
+          <Route
+            index
+            element={
+              <ProtectedRoute>
+                <h1>Hello World!</h1>
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/login"
             element={

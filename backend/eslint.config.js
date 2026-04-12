@@ -1,4 +1,6 @@
 const js = require("@eslint/js");
+const pluginJest = require("eslint-plugin-jest");
+const globals = require("globals");
 
 /** @type {import("eslint").Linter.FlatConfig[]} */
 module.exports = [
@@ -17,9 +19,16 @@ module.exports = [
       "temp/**",
     ],
 
+    plugins: {
+      jest: pluginJest,
+    },
+
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "commonjs",
+      globals: {
+        ...globals.jest,
+      },
     },
 
     rules: {
@@ -47,6 +56,13 @@ module.exports = [
       quotes: ["error", "double", { avoidEscape: true }],
       indent: ["error", 2, { SwitchCase: 1 }],
       "comma-dangle": ["error", "always-multiline"],
+
+      // Jest
+      "jest/no-disabled-tests": "warn",
+      "jest/no-focused-tests": "error",
+      "jest/no-identical-title": "error",
+      "jest/prefer-to-have-length": "warn",
+      "jest/valid-expect": "error",
     },
   },
 ];

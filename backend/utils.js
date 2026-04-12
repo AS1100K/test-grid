@@ -3,8 +3,8 @@ const jwt = require("jsonwebtoken");
 
 async function hasPermissions(authorization_header, allowed_role) {
   if (
-    typeof authorization_header != "string" ||
-    typeof allowed_role != "string"
+    typeof authorization_header !== "string" ||
+    typeof allowed_role !== "string"
   ) {
     return {
       status: 400,
@@ -53,7 +53,7 @@ async function hasPermissions(authorization_header, allowed_role) {
 }
 
 async function verifyAccessToken(token) {
-  if (typeof token != "string") {
+  if (typeof token !== "string") {
     return {
       status: 400,
       success: false,
@@ -62,12 +62,14 @@ async function verifyAccessToken(token) {
   }
 
   try {
-    var decoded = jwt.verify(token, process.env.JWT_SECRET, { complete: true });
-    var payload = decoded.payload;
+    const decoded = jwt.verify(token, globalThis.process.env.JWT_SECRET, {
+      complete: true,
+    });
+    const payload = decoded.payload;
 
     if (
-      typeof payload.username != "string" ||
-      typeof payload.role != "string"
+      typeof payload.username !== "string" ||
+      typeof payload.role !== "string"
     ) {
       return {
         status: 401,
@@ -76,7 +78,7 @@ async function verifyAccessToken(token) {
       };
     }
 
-    var [result, _] = await pool.query(
+    const [result, _] = await pool.query(
       "SELECT role, assigned_exam_id from users WHERE username=?",
       [payload.username],
     );
@@ -90,7 +92,7 @@ async function verifyAccessToken(token) {
       };
     }
 
-    var user = result[0];
+    const user = result[0];
     if (
       (user.role === payload.role,
       user.assigned_exam_id === payload.assigned_exam_id)

@@ -3,10 +3,10 @@ const pool = require("../../services/db");
 const officeParser = require("officeparser");
 const { hasPermissions } = require("../../utils");
 
-var router = express.Router();
+const router = express.Router();
 
 router.post("/parse_paper", async function (req, res, _) {
-  var permission = await hasPermissions(
+  const permission = await hasPermissions(
     req.headers.authorization,
     "super_admin",
   );
@@ -15,8 +15,7 @@ router.post("/parse_paper", async function (req, res, _) {
     return res.status(permission.status).send(permission);
   }
 
-  console.log(req.body);
-  var exam_id = req.body.exam_id;
+  const exam_id = req.body.exam_id;
   if (
     exam_id == null ||
     (typeof exam_id !== "string" && typeof exam_id !== "number")
@@ -28,7 +27,7 @@ router.post("/parse_paper", async function (req, res, _) {
     });
   }
 
-  var [result, _] = await pool.query("SELECT is_active FROM exams WHERE id=?", [
+  const [result] = await pool.query("SELECT is_active FROM exams WHERE id=?", [
     exam_id,
   ]);
 
@@ -40,7 +39,7 @@ router.post("/parse_paper", async function (req, res, _) {
     });
   }
 
-  if (result[0].is_active == true) {
+  if (result[0].is_active === true) {
     return res.status(403).send({
       status: 403,
       success: false,
@@ -49,8 +48,8 @@ router.post("/parse_paper", async function (req, res, _) {
   }
 
   if (req.files && Object.keys(req.files).length !== 0) {
-    var question_paper = req.files.question_paper;
-    if (question_paper == undefined) {
+    const question_paper = req.files.question_paper;
+    if (question_paper === undefined) {
       return res.status(400).send({
         status: 400,
         success: false,
@@ -58,15 +57,15 @@ router.post("/parse_paper", async function (req, res, _) {
       });
     }
 
-    var questions = await parseQuestionPaper(question_paper.data);
+    const questions = await parseQuestionPaper(question_paper.data);
     res.send(questions);
   }
 });
 
 async function parseQuestionPaper(file_data) {
-  var ast = await officeParser.parseOffice(file_data);
+  const ast = await officeParser.parseOffice(file_data);
 
-  if (ast.type != "docx") {
+  if (ast.type !== "docx") {
     return {
       status: 400,
       success: false,
@@ -74,10 +73,10 @@ async function parseQuestionPaper(file_data) {
     };
   }
 
-  var sections = [];
+  const sections = [];
 
-  var currentSection = null;
-  var currentQuestion = null;
+  let currentSection = null;
+  let currentQuestion = null;
 
   const pushQuestion = () => {
     if (currentSection && currentQuestion) {
@@ -94,8 +93,10 @@ async function parseQuestionPaper(file_data) {
   };
 
   for (const node of ast.content) {
-    var text = (node.text || "").trim();
-    if (!text) continue;
+    const text = (node.text || "").trim();
+    if (!text) {
+      continue;
+    }
 
     // Section
     if (text.startsWith("SECTION:")) {

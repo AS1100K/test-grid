@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+
 const mysql = require("mysql2");
 const config = require("../config");
 const bcrypt = require("bcrypt");
@@ -35,7 +37,7 @@ async function main() {
     // Ensure connection is closed
     try {
       await db.end();
-    } catch (e) {
+    } catch {
       // ignore close errors
     }
   }

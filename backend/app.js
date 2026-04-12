@@ -6,7 +6,7 @@ const fileUpload = require("express-fileupload");
 
 const apiRouter = require("./routes/api");
 
-var app = express();
+const app = express();
 
 app.use(cors());
 app.use(logger("dev"));

@@ -4,12 +4,12 @@ const jwt = require("jsonwebtoken");
 const pool = require("../../services/db");
 const { verifyAccessToken } = require("../../utils");
 
-var router = express.Router();
+const router = express.Router();
 
 router.post("/login", async function (req, res, _) {
-  var body = req.body;
+  const body = req.body;
 
-  if (typeof body.username != "string" || typeof body.password != "string") {
+  if (typeof body.username !== "string" || typeof body.password !== "string") {
     return res.status(400).send({
       status: 400,
       success: false,
@@ -17,12 +17,12 @@ router.post("/login", async function (req, res, _) {
     });
   }
 
-  var [users, _] = await pool.query(
+  const [users] = await pool.query(
     "SELECT password_hash, role, assigned_exam_id FROM users WHERE username=?",
     [body.username],
   );
 
-  if (users.length != 1) {
+  if (users.length !== 1) {
     return res.status(400).send({
       status: 400,
       success: false,
@@ -30,17 +30,20 @@ router.post("/login", async function (req, res, _) {
     });
   }
 
-  var user = users[0];
-  var valid_password = await bcrypt.compare(body.password, user.password_hash);
+  const user = users[0];
+  const valid_password = await bcrypt.compare(
+    body.password,
+    user.password_hash,
+  );
 
   if (valid_password) {
-    var paylaod = {
+    const paylaod = {
       username: body.username,
       role: user.role,
       assigned_exam_id: user.assigned_exam_id,
     };
 
-    var token = jwt.sign(paylaod, process.env.JWT_SECRET, {
+    const token = jwt.sign(paylaod, globalThis.process.env.JWT_SECRET, {
       // TODO: Role based expiration
       // - super_admin: 1d
       // - admin: 1d
@@ -68,8 +71,8 @@ router.post("/login", async function (req, res, _) {
 });
 
 router.post("/verify", async function (req, res, _) {
-  var token = req.body.token;
-  var result = await verifyAccessToken(token);
+  const token = req.body.token;
+  const result = await verifyAccessToken(token);
 
   return res.status(result.status).send(result);
 });

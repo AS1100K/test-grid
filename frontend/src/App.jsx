@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router";
 import Login from "./pages/Login.jsx";
-import { AuthProvider } from "./contexts/AuthContext.js";
-import ProtectedRoute from "./components/ProtectedRoute.js";
+import { AuthProvider } from "./contexts/AuthContext.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 function App() {
   return (

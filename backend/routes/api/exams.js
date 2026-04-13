@@ -2,10 +2,12 @@ const express = require("express");
 const pool = require("../../services/db");
 const { hasPermissions } = require("../../utils");
 const parsePaperRouter = require("./exams/parse_paper");
+const questionsRouter = require("./exams/questions");
 
 const router = express.Router();
 
 router.use("/parse_paper", parsePaperRouter);
+router.use("/questions", questionsRouter);
 
 router.post("/", async function (req, res, _) {
   const permission = await hasPermissions(

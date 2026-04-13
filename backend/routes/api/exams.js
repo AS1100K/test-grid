@@ -5,6 +5,24 @@ const { hasPermissions } = require("../../utils");
 
 const router = express.Router();
 
+router.get("/", async function (req, res, _) {
+  const permission = await hasPermissions(
+    req.headers.authorization,
+    "super_admin",
+  );
+
+  if (!permission.success) {
+    return res.status(permission.status).send(permission);
+  }
+
+  const [result] = await pool.query("SELECT id, title, is_active from exams");
+  return res.status(200).send({
+    status: 200,
+    success: true,
+    data: result,
+  });
+});
+
 router.post("/parse_paper", async function (req, res, _) {
   const permission = await hasPermissions(
     req.headers.authorization,

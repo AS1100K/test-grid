@@ -1,4 +1,4 @@
-const { parseQuestionPaper } = require("../routes/api/exams");
+const { parseQuestionPaper } = require("../routes/api/exams/parse_paper");
 const fs = require("fs");
 
 test("Question Paper Parsing", async () => {

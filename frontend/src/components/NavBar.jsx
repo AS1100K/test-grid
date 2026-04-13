@@ -36,7 +36,11 @@ export default function NavBar() {
             }}
           >
             {/* Brand / Logo */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box
+              sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
+              component="a"
+              href="/"
+            >
               <Box
                 component="img"
                 src="/favicon.svg"

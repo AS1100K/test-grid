@@ -6,6 +6,7 @@ import AuthProvider from "./contexts/AuthProvider.jsx";
 import NotificationProvider from "./contexts/NotificationProvider.jsx";
 import ToastNotification from "./components/ToastNotification.jsx";
 import NavBar from "./components/NavBar.jsx";
+import Exams from "./pages/exams.jsx";
 
 function App() {
   return (
@@ -16,6 +17,14 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route
+              path="/login"
+              element={
+                <ProtectedRoute auth_required={false} redirect_to="/">
+                  <Login />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               index
               element={
                 <ProtectedRoute>
@@ -24,10 +33,10 @@ function App() {
               }
             />
             <Route
-              path="/login"
+              path="/exams/*"
               element={
-                <ProtectedRoute auth_required={false} redirect_to="/">
-                  <Login />
+                <ProtectedRoute>
+                  <Exams />
                 </ProtectedRoute>
               }
             />

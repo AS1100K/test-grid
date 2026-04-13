@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import useToken from "../components/useToken";
+import useToken from "../useToken";
 import fetch_ from "../utils";
 import { AuthContext } from "./useAuth";
 import useNotification from "./useNotification";

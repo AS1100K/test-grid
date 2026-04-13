@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from "react-router";
-import ExamsNew from "./exams/new";
-import EditExam from "./exams/editExam";
+import ExamsNew from "./exams/New";
+import EditExam from "./exams/EditExam";
 
 export default function Exams() {
   return (

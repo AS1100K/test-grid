@@ -6,7 +6,7 @@ import AuthProvider from "./contexts/AuthProvider.jsx";
 import NotificationProvider from "./contexts/NotificationProvider.jsx";
 import ToastNotification from "./components/ToastNotification.jsx";
 import NavBar from "./components/NavBar.jsx";
-import Exams from "./pages/exams.jsx";
+import Exams from "./pages/Exams.jsx";
 
 function App() {
   return (

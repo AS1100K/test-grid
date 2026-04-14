@@ -69,15 +69,14 @@ export default function ExamsNew() {
           : null,
       };
 
-      const res = await fetch_("POST", "/api/exams", payload, {
+      const res = await fetch_("PUT", "/api/exams", payload, {
         Authorization: `Bearer ${token}`,
       });
 
       if (!res.success) {
         addNotification({
           type: "error",
-          title: "Failed to create exam",
-          description: res.message ?? "Unknown error",
+          message: res.message,
         });
         return;
       }

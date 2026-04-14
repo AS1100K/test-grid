@@ -11,7 +11,7 @@ router.use("/parse_paper", parsePaperRouter);
 router.use("/questions", questionsRouter);
 router.use("/paper", paperRouter);
 
-router.post("/", async function (req, res, _) {
+router.put("/", async function (req, res, _) {
   const permission = await hasPermissions(
     req.headers.authorization,
     "super_admin",
@@ -21,8 +21,16 @@ router.post("/", async function (req, res, _) {
     return res.status(permission.status).send(permission);
   }
 
-  const { title } = req.body;
+  const { title, exam_id, is_active } = req.body;
   let { description, duration } = req.body;
+
+  if (exam_id != null && typeof exam_id !== "number") {
+    return res.status(400).send({
+      status: 400,
+      success: false,
+      message: "`exam_id` must be a number if provided.",
+    });
+  }
 
   if (typeof title !== "string" || title.trim() === "") {
     return res.status(400).send({
@@ -63,10 +71,30 @@ router.post("/", async function (req, res, _) {
     duration = num;
   }
 
+  if (is_active != null && typeof is_active !== "boolean") {
+    return res.status(400).send({
+      status: 400,
+      success: false,
+      message: "`is_active` must be a boolean if provided.",
+    });
+  }
+
   try {
+    if (exam_id) {
+      await pool.query(
+        "UPDATE exams SET title=?, description=?, duration=?, is_active=? WHERE id=?",
+        [cleanTitle, description, duration, is_active || false, exam_id],
+      );
+
+      return res.status(200).send({
+        status: 200,
+        success: true,
+        data: { id: exam_id },
+      });
+    }
     const [result] = await pool.query(
-      "INSERT INTO exams (title, description, duration) VALUES (?, ?, ?)",
-      [cleanTitle, description, duration],
+      "INSERT INTO exams (title, description, duration, is_active) VALUES (?, ?, ?, ?)",
+      [cleanTitle, description, duration, is_active || false],
     );
 
     return res.status(201).send({

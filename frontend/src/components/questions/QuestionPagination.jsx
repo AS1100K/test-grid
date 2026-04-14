@@ -27,6 +27,7 @@ export default function QuestionPagination({
   is_saved,
   exam_id,
   examInfo,
+  setExamInfo,
   currentSectionIndex,
   setCurrentSectionIndex,
   currentQuestionIndex,
@@ -37,14 +38,14 @@ export default function QuestionPagination({
   const { addNotification } = useNotification();
   const { token } = useAuth();
 
+  const [savingSettings, setSavingSettings] = useState(false);
   const [uploadingPaper, setUploadingPaper] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [draftExam, setDraftExam] = useState(() => ({
     title: examInfo?.title || "",
     description: examInfo?.description || "",
     is_active: !!examInfo?.is_active,
-    duration_minutes:
-      examInfo?.duration_minutes != null ? examInfo.duration_minutes : "",
+    duration: examInfo?.duration != null ? examInfo.duration : "",
   }));
 
   const handleUploadPaper = async () => {
@@ -79,8 +80,7 @@ export default function QuestionPagination({
       title: examInfo?.title || "",
       description: examInfo?.description || "",
       is_active: !!examInfo?.is_active,
-      duration_minutes:
-        examInfo?.duration_minutes != null ? examInfo.duration_minutes : "",
+      duration: examInfo?.duration != null ? examInfo.duration : "",
     });
     setSettingsOpen(true);
   };
@@ -89,9 +89,31 @@ export default function QuestionPagination({
     setSettingsOpen(false);
   };
 
-  const handleSettingsSave = () => {
-    // TODO
+  const handleSettingsSave = async () => {
+    setSavingSettings(true);
+
+    const res = await fetch_(
+      "PUT",
+      "/api/exams",
+      {
+        ...draftExam,
+        exam_id: parseInt(exam_id, 10),
+      },
+      {
+        Authorization: `Bearer ${token}`,
+      },
+    );
+
+    if (!res.success) {
+      addNotification({
+        type: "error",
+        message: res.message,
+      });
+    }
+
+    setExamInfo(draftExam);
     setSettingsOpen(false);
+    setSavingSettings(false);
   };
 
   const handlePrevQuestion = () => {
@@ -273,11 +295,11 @@ export default function QuestionPagination({
               fullWidth
               type="number"
               inputProps={{ min: 1 }}
-              value={draftExam.duration_minutes}
+              value={draftExam.duration}
               onChange={(e) =>
                 setDraftExam((prev) => ({
                   ...prev,
-                  duration_minutes: e.target.value,
+                  duration: e.target.value,
                 }))
               }
               helperText="Optional. Leave blank for no time limit."
@@ -308,6 +330,7 @@ export default function QuestionPagination({
             onClick={handleSettingsSave}
             variant="contained"
             sx={{ textTransform: "none", borderRadius: 999 }}
+            loading={savingSettings}
           >
             Save
           </Button>

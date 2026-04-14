@@ -25,7 +25,7 @@ router.get("/:exam_id", async function (req, res, _) {
 
   try {
     const [exams] = await pool.query(
-      "SELECT title, description, is_active from exams WHERE id=?",
+      "SELECT title, description, is_active, duration from exams WHERE id=?",
       [exam_id],
     );
 
@@ -50,6 +50,7 @@ router.get("/:exam_id", async function (req, res, _) {
           title: exams[0].title,
           description: exams[0].description,
           is_active: exams[0].is_active,
+          duration: exams[0].duration,
           sections: [],
         },
       });
@@ -79,6 +80,7 @@ router.get("/:exam_id", async function (req, res, _) {
         title: exams[0].title,
         description: exams[0].description,
         is_active: exams[0].is_active,
+        duration: exams[0].duration,
         sections: paper,
       },
     });

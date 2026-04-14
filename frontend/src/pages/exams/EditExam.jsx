@@ -26,6 +26,7 @@ export default function EditExam() {
   const [examInfo, setExamInfo] = useState({
     title: null,
     description: null,
+    duration: null,
     is_active: null,
   });
   const [questions, setQuestions] = useState(null); // null = not loaded yet
@@ -63,6 +64,7 @@ export default function EditExam() {
           title: res.data.title,
           description: res.data.description,
           is_active: res.data.is_active,
+          duration: res.data.duration,
         });
         setQuestions(res.data.sections ?? []);
       } catch (err) {
@@ -110,6 +112,7 @@ export default function EditExam() {
         is_saved={uploadedFile === null}
         exam_id={exam_id}
         examInfo={examInfo}
+        setExamInfo={setExamInfo}
         currentSectionIndex={currentSectionIndex}
         setCurrentSectionIndex={setCurrentSectionIndex}
         currentQuestionIndex={currentQuestionIndex}

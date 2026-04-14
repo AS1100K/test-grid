@@ -15,7 +15,7 @@ CREATE TABLE sections (
     id INT AUTO_INCREMENT PRIMARY KEY,
     exam_id INT,
 
-    name VARCHAR(100),
+    name VARCHAR(100) NOT NULL,
     instructions TEXT,
 
     section_order INT NOT NULL,

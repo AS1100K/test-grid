@@ -7,6 +7,7 @@ import NotificationProvider from "./contexts/NotificationProvider.jsx";
 import ToastNotification from "./components/ToastNotification.jsx";
 import NavBar from "./components/NavBar.jsx";
 import Exams from "./pages/Exams.jsx";
+import NewUser from "./pages/NewUser.jsx";
 
 function App() {
   return (
@@ -29,6 +30,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/new-user"
+              element={
+                <ProtectedRoute>
+                  <NewUser />
                 </ProtectedRoute>
               }
             />

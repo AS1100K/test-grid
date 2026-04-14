@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 async function hasPermissions(authorization_header, allowed_role) {
   if (
     typeof authorization_header !== "string" ||
-    typeof allowed_role !== "string"
+    !(typeof allowed_role === "string" || Array.isArray(allowed_role))
   ) {
     return {
       status: 400,
@@ -37,7 +37,10 @@ async function hasPermissions(authorization_header, allowed_role) {
   }
 
   const { role } = verification.data;
-  if (role !== allowed_role) {
+  if (
+    (typeof allowed_role === "string" && role !== allowed_role) ||
+    (Array.isArray(allowed_role) && !allowed_role.includes(role))
+  ) {
     return {
       status: 403,
       success: false,

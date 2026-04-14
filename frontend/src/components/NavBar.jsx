@@ -6,10 +6,11 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
 import useAuth from "../contexts/useAuth";
 
 export default function NavBar() {
-  const { token, logout } = useAuth();
+  const { token, user, logout } = useAuth();
 
   if (!token) {
     return <></>;
@@ -65,25 +66,57 @@ export default function NavBar() {
             </Box>
 
             {/* Right-side actions */}
-            <Button
-              variant="outlined"
-              onClick={logout}
+            <Box
               sx={{
-                borderRadius: 999,
-                textTransform: "none",
-                px: 2.5,
-                py: 0.7,
-                fontWeight: 500,
-                borderColor: "rgba(148, 163, 184, 0.7)",
-                color: "rgb(226, 232, 240)",
-                "&:hover": {
-                  borderColor: "rgb(248, 250, 252)",
-                  backgroundColor: "rgba(148, 163, 184, 0.2)",
-                },
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "20px",
               }}
             >
-              Logout
-            </Button>
+              {user?.role === "super_admin" && (
+                <Button
+                  variant="outlined"
+                  href="/new-user"
+                  sx={{
+                    borderRadius: 999,
+                    textTransform: "none",
+                    px: 2.5,
+                    py: 0.7,
+                    fontWeight: 500,
+                    borderColor: "rgba(148, 163, 184, 0.7)",
+                    color: "rgb(226, 232, 240)",
+                    "&:hover": {
+                      borderColor: "rgb(248, 250, 252)",
+                      backgroundColor: "rgba(148, 163, 184, 0.2)",
+                    },
+                  }}
+                >
+                  <AddIcon />
+                  New User
+                </Button>
+              )}
+
+              <Button
+                variant="outlined"
+                onClick={logout}
+                sx={{
+                  borderRadius: 999,
+                  textTransform: "none",
+                  px: 2.5,
+                  py: 0.7,
+                  fontWeight: 500,
+                  borderColor: "rgba(148, 163, 184, 0.7)",
+                  color: "rgb(226, 232, 240)",
+                  "&:hover": {
+                    borderColor: "rgb(248, 250, 252)",
+                    backgroundColor: "rgba(148, 163, 184, 0.2)",
+                  },
+                }}
+              >
+                Logout
+              </Button>
+            </Box>
           </Toolbar>
         </Container>
       </AppBar>

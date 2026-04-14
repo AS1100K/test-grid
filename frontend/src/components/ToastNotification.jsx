@@ -13,6 +13,7 @@ export default function ToastNotification() {
         right: 0,
         maxHeight: "90vh",
         overflowY: "scroll",
+        zIndex: 99,
       }}
     >
       {notificationList.map((notification) => {

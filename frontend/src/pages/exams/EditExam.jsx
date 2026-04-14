@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import {
   Box,
   Container,
@@ -12,16 +12,27 @@ import useAuth from "../../contexts/useAuth";
 import useNotification from "../../contexts/useNotification";
 import fetch_ from "../../utils";
 import QuestionPaperUpload from "../../components/QuestionPaperUpload";
+import QuestionPagination from "../../components/questions/QuestionPagination";
+import Question from "../../components/questions/Question";
 
 export default function EditExam() {
   const { exam_id } = useParams();
   const { token } = useAuth();
   const { addNotification } = useNotification();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [uploadedFile, setUploadedFile] = useState(null);
+  const [examInfo, setExamInfo] = useState({
+    title: null,
+    description: null,
+    is_active: null,
+    exam_id,
+  });
   const [questions, setQuestions] = useState(null); // null = not loaded yet
-  const [parsedData, setParsedData] = useState(null);
+
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1);
 
   useEffect(() => {
     let mounted = true;
@@ -45,11 +56,16 @@ export default function EditExam() {
             type: "error",
             message: res.message,
           });
-          setQuestions([]);
+          navigate("/");
           return;
         }
 
-        setQuestions(res?.data ?? []);
+        setExamInfo({
+          title: res.data.title,
+          description: res.data.description,
+          is_active: res.data.is_active,
+        });
+        setQuestions(res.data.sections ?? []);
       } catch (err) {
         if (!mounted) return;
 
@@ -68,7 +84,7 @@ export default function EditExam() {
     return () => {
       mounted = false;
     };
-  }, [token, exam_id, addNotification]);
+  }, [token, exam_id, addNotification, navigate]);
 
   const renderLoading = () => (
     <Paper
@@ -90,59 +106,42 @@ export default function EditExam() {
   );
 
   const renderQuestions = () => (
-    <Paper
-      elevation={1}
-      sx={{
-        p: 3,
-        borderRadius: 3,
-      }}
-    >
-      <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-        Existing questions
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
-        Placeholder: questions already exist for this exam. The detailed
-        management UI for existing questions will be implemented here.
-      </Typography>
-    </Paper>
+    <>
+      <QuestionPagination
+        is_saved={false}
+        examInfo={examInfo}
+        currentSectionIndex={currentSectionIndex}
+        setCurrentSectionIndex={setCurrentSectionIndex}
+        currentQuestionIndex={currentQuestionIndex}
+        setCurrentQuestionIndex={setCurrentQuestionIndex}
+        questions={questions}
+      />
+      <Question
+        is_admin={true}
+        currentSectionIndex={currentSectionIndex}
+        currentQuestionIndex={currentQuestionIndex}
+        questions={questions}
+      />
+    </>
   );
 
-  const showUploadFlow =
-    Array.isArray(questions) && questions.length === 0 && !parsedData;
+  const showUploadFlow = Array.isArray(questions) && questions.length === 0;
 
-  const showQuestionsPlaceholder =
-    (Array.isArray(questions) && questions.length > 0) ||
-    (!!parsedData && !showUploadFlow);
+  const showQuestions = Array.isArray(questions) && questions.length > 0;
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
-      <Box
-        sx={{
-          mb: 3,
-          display: "flex",
-          flexDirection: "column",
-          gap: 0.5,
-        }}
-      >
-        <Typography variant="h5" sx={{ fontWeight: 600 }}>
-          Edit exam
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Exam ID: {exam_id}
-        </Typography>
-      </Box>
-
       <Stack spacing={3}>
         {loading && renderLoading()}
         {!loading && showUploadFlow && (
           <QuestionPaperUpload
             examId={exam_id}
-            setParsedData={setParsedData}
+            setParsedData={setQuestions}
             file={uploadedFile}
             setFile={setUploadedFile}
           />
         )}
-        {!loading && showQuestionsPlaceholder && renderQuestions()}
+        {!loading && showQuestions && renderQuestions()}
       </Stack>
     </Container>
   );

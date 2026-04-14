@@ -24,9 +24,10 @@ router.get("/:exam_id", async function (req, res, _) {
   }
 
   try {
-    const [exams] = await pool.query("SELECT id from exams WHERE id=?", [
-      exam_id,
-    ]);
+    const [exams] = await pool.query(
+      "SELECT title, description, is_active from exams WHERE id=?",
+      [exam_id],
+    );
 
     if (exams.length !== 1) {
       return res.status(404).send({
@@ -45,7 +46,12 @@ router.get("/:exam_id", async function (req, res, _) {
       return res.status(200).send({
         status: 200,
         success: true,
-        data: [],
+        data: {
+          title: exams[0].title,
+          description: exams[0].description,
+          is_active: exams[0].is_active,
+          sections: [],
+        },
       });
     }
 
@@ -69,7 +75,12 @@ router.get("/:exam_id", async function (req, res, _) {
     return res.status(200).send({
       status: 200,
       success: true,
-      data: paper,
+      data: {
+        title: exams[0].title,
+        description: exams[0].description,
+        is_active: exams[0].is_active,
+        sections: paper,
+      },
     });
   } catch (err) {
     return res.status(500).send({

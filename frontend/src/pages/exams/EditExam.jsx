@@ -27,7 +27,6 @@ export default function EditExam() {
     title: null,
     description: null,
     is_active: null,
-    exam_id,
   });
   const [questions, setQuestions] = useState(null); // null = not loaded yet
 
@@ -108,13 +107,15 @@ export default function EditExam() {
   const renderQuestions = () => (
     <>
       <QuestionPagination
-        is_saved={false}
+        is_saved={uploadedFile === null}
+        exam_id={exam_id}
         examInfo={examInfo}
         currentSectionIndex={currentSectionIndex}
         setCurrentSectionIndex={setCurrentSectionIndex}
         currentQuestionIndex={currentQuestionIndex}
         setCurrentQuestionIndex={setCurrentQuestionIndex}
         questions={questions}
+        setUploadedFile={setUploadedFile}
       />
       <Question
         is_admin={true}

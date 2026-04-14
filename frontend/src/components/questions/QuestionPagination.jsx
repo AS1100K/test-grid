@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Chip,
-  Container,
   Dialog,
   DialogActions,
   DialogContent,
@@ -20,16 +19,25 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import SettingsIcon from "@mui/icons-material/Settings";
+import fetch_ from "../../utils";
+import useNotification from "../../contexts/useNotification";
+import useAuth from "../../contexts/useAuth";
 
 export default function QuestionPagination({
   is_saved,
+  exam_id,
   examInfo,
   currentSectionIndex,
   setCurrentSectionIndex,
   currentQuestionIndex,
   setCurrentQuestionIndex,
   questions,
+  setUploadedFile,
 }) {
+  const { addNotification } = useNotification();
+  const { token } = useAuth();
+
+  const [uploadingPaper, setUploadingPaper] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [draftExam, setDraftExam] = useState(() => ({
     title: examInfo?.title || "",
@@ -38,6 +46,33 @@ export default function QuestionPagination({
     duration_minutes:
       examInfo?.duration_minutes != null ? examInfo.duration_minutes : "",
   }));
+
+  const handleUploadPaper = async () => {
+    setUploadingPaper(true);
+
+    const res = await fetch_(
+      "PUT",
+      `/api/exams/paper/${exam_id}`,
+      {
+        sections: questions,
+      },
+      {
+        Authorization: `Bearer ${token}`,
+      },
+    );
+
+    if (!res.success) {
+      addNotification({
+        type: "error",
+        message: res.message,
+      });
+
+      return setUploadingPaper(false);
+    }
+
+    setUploadedFile(null);
+    setUploadingPaper(false);
+  };
 
   const handleOpenSettings = () => {
     setDraftExam({
@@ -131,6 +166,14 @@ export default function QuestionPagination({
                   size="small"
                   variant={examInfo?.is_active ? "filled" : "outlined"}
                 />
+                {!is_saved && (
+                  <Chip
+                    size="small"
+                    label="Not Uploaded"
+                    color="error"
+                    variant="outlined"
+                  />
+                )}
               </Stack>
 
               <Typography
@@ -149,7 +192,16 @@ export default function QuestionPagination({
 
           {/* Right: navigation + settings */}
           <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-            {!is_saved && <Button variant="contained">Save</Button>}
+            {!is_saved && (
+              <Button
+                variant="contained"
+                onClick={handleUploadPaper}
+                loading={uploadingPaper}
+              >
+                Upload Paper
+              </Button>
+            )}
+
             <Tooltip title="Previous question">
               <span>
                 <IconButton

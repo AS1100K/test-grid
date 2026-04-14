@@ -14,20 +14,20 @@ test("Question Paper Parsing", async () => {
           "This is a very long instruction This is a very long instruction This is a very long instruction This is a very long instruction This is a very long instruction This is a very long instructionThis is a very long instruction This is a very long instruction This is a very long instruction This is a very long instruction This is a very long instruction This is a very long instruction",
         questions: [
           {
-            question: "This is the first question?",
+            question_text: "This is the first question?",
             options: [
               "First Option",
               "Second Option",
               "Thrid Option",
               "Fourth Option",
             ],
-            answer: "C",
+            correct_option: "c",
             marks: 4,
           },
           {
-            question: "What is 3+3?",
+            question_text: "What is 3+3?",
             options: ["5", "6", "7", "8"],
-            answer: "B",
+            correct_option: "b",
             marks: 4,
           },
         ],
@@ -37,14 +37,14 @@ test("Question Paper Parsing", async () => {
         instructions: "",
         questions: [
           {
-            question: "This is the third question?",
+            question_text: "This is the third question?",
             options: [
               "First Option",
               "Second Option",
               "Thrid Option",
               "Fourth Option",
             ],
-            answer: "D",
+            correct_option: "d",
             marks: 5,
           },
         ],

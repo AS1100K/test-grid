@@ -28,7 +28,7 @@ function App() {
             <Route
               index
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={["super_admin", "admin"]}>
                   <Dashboard />
                 </ProtectedRoute>
               }
@@ -36,7 +36,7 @@ function App() {
             <Route
               path="/new-user"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={["super_admin", "admin"]}>
                   <NewUser />
                 </ProtectedRoute>
               }
@@ -44,7 +44,7 @@ function App() {
             <Route
               path="/exams/*"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={["super_admin"]}>
                   <Exams />
                 </ProtectedRoute>
               }

@@ -74,7 +74,7 @@ export default function NavBar() {
                 gap: "20px",
               }}
             >
-              {user?.role === "super_admin" && (
+              {["super_admin", "admin"].includes(user?.role) && (
                 <Button
                   variant="outlined"
                   href="/new-user"

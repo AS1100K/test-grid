@@ -58,6 +58,15 @@ router.post("/", async function (req, res, _) {
     });
   }
 
+  if (permission.data.role === "admin" && role === "admin") {
+    return res.status(401).send({
+      status: 401,
+      success: false,
+      message:
+        "Unauthorised user creation request. The user can only be student.",
+    });
+  }
+
   try {
     const passwordHash = await bcrypt.hash(password, config.salt_rounds);
 

@@ -113,10 +113,10 @@ router.put("/", async function (req, res, _) {
 });
 
 router.get("/", async function (req, res, _) {
-  const permission = await hasPermissions(
-    req.headers.authorization,
+  const permission = await hasPermissions(req.headers.authorization, [
     "super_admin",
-  );
+    "admin",
+  ]);
 
   if (!permission.success) {
     return res.status(permission.status).send(permission);

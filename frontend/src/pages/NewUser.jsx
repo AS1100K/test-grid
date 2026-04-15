@@ -15,10 +15,13 @@ import {
 import useNotification from "../contexts/useNotification";
 import useAuth from "../contexts/useAuth";
 import fetch_ from "../utils";
+import { useEffect } from "react";
 
 export default function NewUser() {
   const { addNotification } = useNotification();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+
+  const [exams, setExams] = useState([]);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -32,6 +35,27 @@ export default function NewUser() {
     role: "",
     assignedExamId: "",
   });
+
+  useEffect(() => {
+    async function getExams() {
+      const res = await fetch_("GET", "/api/exams", null, {
+        Authorization: `Bearer ${token}`,
+      });
+
+      if (!res.success) {
+        addNotification({
+          type: "error",
+          message: res.message,
+        });
+
+        return;
+      }
+
+      setExams(res.data);
+    }
+
+    getExams();
+  }, [user, token, addNotification]);
 
   const validate = () => {
     const nextErrors = {
@@ -75,10 +99,7 @@ export default function NewUser() {
         username: username.trim(),
         password: password.trim(),
         role,
-        assigned_exam_id:
-          role === "student" && assignedExamId.trim()
-            ? assignedExamId.trim()
-            : null,
+        assigned_exam_id: role === "student" ? assignedExamId : null,
       };
 
       const res = await fetch_("POST", "/api/users", payload, {
@@ -177,23 +198,35 @@ export default function NewUser() {
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
               >
-                <MenuItem value="admin">Admin</MenuItem>
+                <MenuItem value="admin" disabled={user?.role !== "super_admin"}>
+                  Admin
+                </MenuItem>
                 <MenuItem value="student">Student</MenuItem>
               </Select>
             </FormControl>
 
             {isStudent && (
-              <TextField
-                label="Assigned exam ID"
+              <FormControl
                 fullWidth
-                value={assignedExamId}
-                onChange={(e) => setAssignedExamId(e.target.value)}
+                required
                 error={Boolean(errors.assignedExamId)}
-                helperText={
-                  errors.assignedExamId ||
-                  "Optional. Link this student to a specific exam by ID."
-                }
-              />
+              >
+                <InputLabel id="assigned-exam-id-label">
+                  Assigned Exam
+                </InputLabel>
+                <Select
+                  labelId="assigned-exam-id-label"
+                  label="Assigned Exam"
+                  value={assignedExamId}
+                  onChange={(e) => setAssignedExamId(e.target.value)}
+                >
+                  {exams.map((exam) => (
+                    <MenuItem value={exam.id}>
+                      {exam.id}: {exam.title}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             )}
 
             <Box

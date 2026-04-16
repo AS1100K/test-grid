@@ -1,17 +1,21 @@
 import { useEffect, useState } from "react";
 import fetch_ from "../../../utils";
 import useAuth from "../../../contexts/useAuth";
-import { Box, Container, Stack, Typography } from "@mui/material";
+import { Box, Button, Container, Stack, Typography } from "@mui/material";
 import AlarmIcon from "@mui/icons-material/Alarm";
+import useNotification from "../../../contexts/useNotification";
 
 export default function ExamNavigation({
   examInfo,
   setExamInfo,
   setExamError,
   hasStarted,
+  setExamStatus,
   startTime,
 }) {
   const { token, user } = useAuth();
+  const { addNotification } = useNotification();
+
   const [timeLeftMs, setTimeLeftMs] = useState(null);
 
   useEffect(() => {
@@ -61,6 +65,28 @@ export default function ExamNavigation({
     return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   })();
 
+  async function handleSubmit() {
+    const confirmation = window.confirm(
+      "Are you sure you want to submit the exam?\nThis action is irreversible.",
+    );
+    if (confirmation) {
+      const res = await fetch_("POST", "/api/student/submit", null, {
+        Authorization: `Bearer ${token}`,
+      });
+
+      if (!res.success) {
+        addNotification({
+          type: "error",
+          message: res.message,
+        });
+
+        return;
+      }
+
+      setExamStatus("submitted");
+    }
+  }
+
   if (examInfo === null) return null;
 
   return (
@@ -101,34 +127,41 @@ export default function ExamNavigation({
             </Typography>
           </Box>
 
-          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-            <AlarmIcon />
+          <Stack direction="row" spacing={5} sx={{ alignItems: "center" }}>
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+              <AlarmIcon />
+              {hasStarted ? (
+                <>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontWeight: 600,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {formattedTime ?? "00:00"}
+                  </Typography>
+                </>
+              ) : (
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    fontWeight: 600,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {examInfo?.duration} minutes
+                </Typography>
+              )}
+            </Stack>
 
-            {hasStarted ? (
-              <Typography
-                variant="subtitle1"
-                sx={{
-                  fontWeight: 600,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {formattedTime ?? "00:00"}
-              </Typography>
-            ) : (
-              <Typography
-                variant="subtitle1"
-                sx={{
-                  fontWeight: 600,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {examInfo?.duration} minutes
-              </Typography>
-            )}
+            <Button variant="contained" onClick={handleSubmit}>
+              Submit
+            </Button>
           </Stack>
         </Box>
       </Container>

@@ -300,4 +300,29 @@ router.post("/save_response", async function (req, res, _) {
   }
 });
 
+router.post("/submit", async function (req, res, _) {
+  const permission = await hasPermissions(req.headers.authorization, "student");
+  if (!permission.status) {
+    return res.status(permission.status).send(permission);
+  }
+
+  const [sessions] = await pool.query(
+    "UPDATE test_sessions SET status=? WHERE student_username=? AND exam_id=?;",
+    ["submitted", permission.data.username, permission.data.assigned_exam_id],
+  );
+
+  if (sessions.affectedRows !== 0) {
+    return res.status(200).send({
+      status: 200,
+      success: true,
+    });
+  } else {
+    return res.status(400).send({
+      status: 400,
+      success: false,
+      message: "Invalid Exam Session",
+    });
+  }
+});
+
 module.exports = router;

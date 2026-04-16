@@ -121,7 +121,8 @@ export default function StudentExam() {
         examInfo={examInfo}
         setExamInfo={setExamInfo}
         setExamError={setExamError}
-        hasStarted={examStatus}
+        hasStarted={examStatus === "in_progress"}
+        startTime={startTime}
       />
 
       {renderExamContent()}

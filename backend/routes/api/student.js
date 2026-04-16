@@ -83,14 +83,14 @@ router.post("/start_exam", async function (req, res, _) {
     });
   }
 
+  let session_id;
+  let session_status;
+  let session_start_time;
+
   const [session] = await pool.query(
     "SELECT id, status, start_time FROM test_sessions WHERE student_username=? AND exam_id=?",
     [permission.data.username, permission.data.assigned_exam_id],
   );
-
-  let session_id;
-  let session_status;
-  let session_start_time;
 
   if (session.length === 0) {
     try {
@@ -101,7 +101,13 @@ router.post("/start_exam", async function (req, res, _) {
 
       session_id = result.insertId;
       session_status = "in_progress";
-      session_start_time = new Date().toISOString();
+
+      const [newSession] = await pool.query(
+        "SELECT id, status, start_time FROM test_sessions WHERE id=?",
+        [session_id],
+      );
+
+      session_start_time = newSession[0].start_time;
     } catch (err) {
       return res.status(500).send({
         status: 500,
@@ -117,7 +123,7 @@ router.post("/start_exam", async function (req, res, _) {
 
   if (typeof examInfo[0].duration === "number") {
     try {
-      const startTime = new Date(session[0].start_time);
+      const startTime = new Date(session_start_time);
 
       // Ensure the start time is valid
       if (!isNaN(startTime.getTime())) {
@@ -125,10 +131,13 @@ router.post("/start_exam", async function (req, res, _) {
         const elapsedMinutes = (now.getTime() - startTime.getTime()) / 60000;
 
         if (elapsedMinutes >= examInfo[0].duration) {
-          if (session[0].status !== "completed") {
+          if (
+            session_status !== "completed" &&
+            session_status !== "submitted"
+          ) {
             await pool.query("UPDATE test_sessions SET status=? WHERE id=?", [
               "submitted",
-              session[0].id,
+              session_id,
             ]);
 
             // TODO: compute marks

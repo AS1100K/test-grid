@@ -26,7 +26,6 @@ export function ExamInfo({
       return;
     }
 
-    sessionStorage.clear();
     setExamStatus(res.data.status);
     setStartTime(new Date(res.data.start_time));
     setSections(res.data.data);

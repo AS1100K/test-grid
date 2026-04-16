@@ -19,7 +19,7 @@ export default function StudentExam() {
 
   const [sections, setSections] = useState([]);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1);
 
   const [loading, setLoading] = useState(false);
 
@@ -56,8 +56,6 @@ export default function StudentExam() {
           />
         );
       case "in_progress":
-        console.log(startTime);
-        console.log(sections);
         return (
           <Container
             maxWidth="lg"
@@ -73,8 +71,11 @@ export default function StudentExam() {
           >
             <ExamQuestion
               sections={sections}
+              setSections={setSections}
               currentSectionIndex={currentSectionIndex}
+              setCurrentSectionIndex={setCurrentSectionIndex}
               currentQuestionIndex={currentQuestionIndex}
+              setCurrentQuestionIndex={setCurrentQuestionIndex}
               loading={loading}
               setLoading={setLoading}
             />

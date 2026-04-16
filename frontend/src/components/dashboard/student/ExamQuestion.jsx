@@ -9,50 +9,86 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import FlagIcon from "@mui/icons-material/Flag";
+import { useEffect, useMemo, useState } from "react";
 import fetch_ from "../../../utils";
 import useAuth from "../../../contexts/useAuth";
 import useNotification from "../../../contexts/useNotification";
 
 export default function ExamQuestion({
   sections,
+  setSections,
   currentSectionIndex,
+  setCurrentSectionIndex,
   currentQuestionIndex,
+  setCurrentQuestionIndex,
   loading,
   setLoading,
 }) {
   const { token } = useAuth();
   const { addNotification } = useNotification();
 
-  const currentSection = sections[currentSectionIndex];
-  const currentQuestion = currentSection.questions[currentQuestionIndex];
+  const currentSection = useMemo(
+    () => sections[currentSectionIndex],
+    [sections, currentSectionIndex],
+  );
+  const currentQuestion = useMemo(
+    () => currentSection?.questions?.[currentQuestionIndex],
+    [currentSection, currentQuestionIndex],
+  );
 
-  function loadSelectedOption() {
-    const sessionResponse = sessionStorage.getItem(
-      `response-${currentQuestion.id}`,
-    );
-
-    if (sessionResponse !== null) {
-      return sessionResponse === "null" ? null : sessionResponse;
-    }
-
-    if (currentQuestion.selected_option !== null) {
-      return currentQuestion.selected_option;
-    }
-
-    return null;
-  }
-
-  const [selectedOption, setSelectedOption] = useState(() =>
-    loadSelectedOption(),
+  const [selectedOption, setSelectedOption] = useState(
+    currentQuestion?.selected_option || null,
   );
 
   useEffect(() => {
-    setSelectedOption(loadSelectedOption());
+    setSelectedOption(currentQuestion?.selected_option || null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSectionIndex, currentQuestionIndex]);
 
+  function updateQuestionStatus(status) {
+    if (!setSections || !currentQuestion) {
+      return;
+    }
+
+    setSections((prevSections) =>
+      prevSections.map((section, sectionIdx) => {
+        if (sectionIdx !== currentSectionIndex) {
+          return section;
+        }
+
+        const updatedQuestions = section.questions.map(
+          (question, questionIdx) =>
+            questionIdx === currentQuestionIndex
+              ? {
+                  ...question,
+                  status: status
+                    ? status
+                    : selectedOption !== null
+                      ? "saved"
+                      : "not_attempted",
+                  selected_option:
+                    status === "marked_for_review"
+                      ? null
+                      : (selectedOption ?? null),
+                }
+              : question,
+        );
+
+        return { ...section, questions: updatedQuestions };
+      }),
+    );
+  }
+
+  function handleMarkForReview() {
+    updateQuestionStatus("marked_for_review");
+  }
+
   async function handleSaveNNext() {
+    if (!currentQuestion) {
+      return;
+    }
+
     setLoading(true);
 
     const res = await fetch_(
@@ -77,11 +113,29 @@ export default function ExamQuestion({
       return;
     }
 
-    sessionStorage.setItem(`response-${currentQuestion.id}`, selectedOption);
+    updateQuestionStatus();
     setLoading(false);
   }
 
-  async function handleNext() {}
+  async function handleNext() {
+    if (
+      currentQuestionIndex === currentSection.questions.length - 1 &&
+      currentSectionIndex < sections.length
+    ) {
+      setCurrentSectionIndex(currentSectionIndex + 1);
+      setCurrentQuestionIndex(-1);
+    } else if (currentQuestionIndex < currentSection.questions.length) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    }
+  }
+
+  const isNextDisabled =
+    currentQuestionIndex === currentSection.questions.length - 1 &&
+    currentSectionIndex === sections.length - 1;
+
+  if (!currentSection) {
+    return null;
+  }
 
   return (
     <Paper sx={{ p: 3, width: { md: "100%" }, minWidth: { md: "50%" } }}>
@@ -109,6 +163,14 @@ export default function ExamQuestion({
               No specific instructions have been provided for this section.
             </Typography>
           )}
+
+          <Button
+            variant="contained"
+            onClick={handleNext}
+            disabled={isNextDisabled}
+          >
+            Next
+          </Button>
         </Stack>
       ) : (
         <Stack spacing={2.5}>
@@ -124,21 +186,49 @@ export default function ExamQuestion({
               <Typography variant="overline" color="textSecondary">
                 {currentSection.name || `Section ${currentSectionIndex + 1}`}
               </Typography>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                Question {currentQuestionIndex + 1}
-              </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "flex-start",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Question {currentQuestionIndex + 1}
+                </Typography>
+                {currentQuestion.status === "marked_for_review" && (
+                  <Chip
+                    color="secondary"
+                    icon={<FlagIcon style={{ width: 20, height: 20 }} />}
+                    label="Marked for Review"
+                  />
+                )}
+              </Box>
             </Box>
 
-            <Chip
-              label={`${currentQuestion.marks ?? 0} Marks`}
-              color="secondary"
-              size="small"
-              variant="filled"
-            />
+            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+              <Chip
+                label={`${currentQuestion?.marks ?? 0} Marks`}
+                color="secondary"
+                size="small"
+                variant="filled"
+              />
+
+              <Button
+                variant="contained"
+                color="secondary"
+                size="small"
+                onClick={handleMarkForReview}
+              >
+                <FlagIcon style={{ width: 15, height: 15, marginRight: 3 }} />
+                Mark for Review
+              </Button>
+            </Stack>
           </Box>
 
           <Typography variant="body1" sx={{ fontSize: 16 }}>
-            {currentQuestion.question_text}
+            {currentQuestion?.question_text}
           </Typography>
 
           <RadioGroup
@@ -148,22 +238,22 @@ export default function ExamQuestion({
             <FormControlLabel
               value="a"
               control={<Radio />}
-              label={currentQuestion.option_a}
+              label={currentQuestion?.option_a}
             />
             <FormControlLabel
               value="b"
               control={<Radio />}
-              label={currentQuestion.option_b}
+              label={currentQuestion?.option_b}
             />
             <FormControlLabel
               value="c"
               control={<Radio />}
-              label={currentQuestion.option_c}
+              label={currentQuestion?.option_c}
             />
             <FormControlLabel
               value="d"
               control={<Radio />}
-              label={currentQuestion.option_d}
+              label={currentQuestion?.option_d}
             />
           </RadioGroup>
 
@@ -187,7 +277,11 @@ export default function ExamQuestion({
               >
                 Save & Next
               </Button>
-              <Button variant="outlined" onClick={handleNext}>
+              <Button
+                variant="outlined"
+                onClick={handleNext}
+                disabled={isNextDisabled}
+              >
                 Next
               </Button>
             </Stack>

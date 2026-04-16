@@ -1,8 +1,15 @@
 import { useState } from "react";
-import { Paper, Stack, Typography, LinearProgress } from "@mui/material";
+import {
+  Paper,
+  Stack,
+  Typography,
+  LinearProgress,
+  Container,
+} from "@mui/material";
 import ExamNavigation from "./student/ExamNavigation";
 import { ExamInfo } from "./student/ExamInfo";
 import ExamQuestion from "./student/ExamQuestion";
+import ExamOverview from "./student/ExamOverview";
 
 export default function StudentExam() {
   const [examStatus, setExamStatus] = useState("not_started");
@@ -52,13 +59,32 @@ export default function StudentExam() {
         console.log(startTime);
         console.log(sections);
         return (
-          <ExamQuestion
-            sections={sections}
-            currentSectionIndex={currentSectionIndex}
-            currentQuestionIndex={currentQuestionIndex}
-            loading={loading}
-            setLoading={setLoading}
-          />
+          <Container
+            maxWidth="lg"
+            sx={{
+              mt: 3,
+              display: "flex",
+              flexDirection: {
+                xs: "column-reverse",
+                md: "row",
+              },
+              gap: 2,
+            }}
+          >
+            <ExamQuestion
+              sections={sections}
+              currentSectionIndex={currentSectionIndex}
+              currentQuestionIndex={currentQuestionIndex}
+              loading={loading}
+              setLoading={setLoading}
+            />
+
+            <ExamOverview
+              sections={sections}
+              setCurrentSectionIndex={setCurrentSectionIndex}
+              setCurrentQuestionIndex={setCurrentQuestionIndex}
+            />
+          </Container>
         );
       case "submitted":
         return "Your exam has been submitted";

@@ -25,8 +25,10 @@ export default function ExamQuestion({
 
   async function handleSaveNNext() {}
 
+  async function handleNext() {}
+
   return (
-    <Paper sx={{ p: 3 }}>
+    <Paper sx={{ p: 3, width: { md: "100%" }, minWidth: { md: "50%" } }}>
       {currentQuestionIndex === -1 ? (
         <Stack spacing={2}>
           <Box>
@@ -128,6 +130,9 @@ export default function ExamQuestion({
                 onClick={handleSaveNNext}
               >
                 Save & Next
+              </Button>
+              <Button variant="outlined" onClick={handleNext}>
+                Next
               </Button>
             </Stack>
           </Stack>

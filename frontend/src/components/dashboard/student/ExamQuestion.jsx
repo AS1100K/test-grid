@@ -9,7 +9,10 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import fetch_ from "../../../utils";
+import useAuth from "../../../contexts/useAuth";
+import useNotification from "../../../contexts/useNotification";
 
 export default function ExamQuestion({
   sections,
@@ -18,12 +21,65 @@ export default function ExamQuestion({
   loading,
   setLoading,
 }) {
+  const { token } = useAuth();
+  const { addNotification } = useNotification();
+
   const currentSection = sections[currentSectionIndex];
   const currentQuestion = currentSection.questions[currentQuestionIndex];
 
-  const [selectedOption, setSelectedOption] = useState(null);
+  function loadSelectedOption() {
+    const sessionResponse = sessionStorage.getItem(
+      `response-${currentQuestion.id}`,
+    );
 
-  async function handleSaveNNext() {}
+    if (sessionResponse !== null) {
+      return sessionResponse === "null" ? null : sessionResponse;
+    }
+
+    if (currentQuestion.selected_option !== null) {
+      return currentQuestion.selected_option;
+    }
+
+    return null;
+  }
+
+  const [selectedOption, setSelectedOption] = useState(() =>
+    loadSelectedOption(),
+  );
+
+  useEffect(() => {
+    setSelectedOption(loadSelectedOption());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSectionIndex, currentQuestionIndex]);
+
+  async function handleSaveNNext() {
+    setLoading(true);
+
+    const res = await fetch_(
+      "POST",
+      "/api/student/save_response",
+      {
+        question_id: currentQuestion.id,
+        selected_option: selectedOption,
+      },
+      {
+        Authorization: `Bearer ${token}`,
+      },
+    );
+
+    if (!res.success) {
+      addNotification({
+        type: "error",
+        message: res.message,
+      });
+
+      setLoading(false);
+      return;
+    }
+
+    sessionStorage.setItem(`response-${currentQuestion.id}`, selectedOption);
+    setLoading(false);
+  }
 
   async function handleNext() {}
 

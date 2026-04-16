@@ -218,4 +218,86 @@ router.post("/start_exam", async function (req, res, _) {
   });
 });
 
+router.post("/save_response", async function (req, res, _) {
+  const permission = await hasPermissions(req.headers.authorization, "student");
+  if (!permission.status) {
+    return res.status(permission.status).send(permission);
+  }
+
+  const [session] = await pool.query(
+    "SELECT ts.id, ts.status, ts.start_time, e.duration FROM test_sessions ts LEFT JOIN exams e ON ts.exam_id = e.id WHERE ts.student_username=? AND ts.exam_id=?;",
+    [permission.data.username, permission.data.assigned_exam_id],
+  );
+
+  if (session.length === 0) {
+    return res.status(401).send({
+      status: 401,
+      success: false,
+      message: "Invalid Test Session.",
+    });
+  }
+
+  const test_session = session[0];
+
+  if (test_session.status !== "in_progress") {
+    return res.status(401).send({
+      status: 401,
+      success: false,
+      message: "The exam is " + test_session.status,
+    });
+  }
+
+  const now = new Date();
+  const start_time = new Date(test_session.start_time);
+  const elapsedMinutes = (now.getTime() - start_time.getTime()) / 60_000;
+
+  if (elapsedMinutes >= test_session.duration) {
+    await pool.query("UPDATE test_sessions SET status=? WHERE id=?", [
+      "submitted",
+      test_session.id,
+    ]);
+
+    return res.status(401).send({
+      status: 401,
+      success: false,
+      message: "The exam is over.",
+    });
+  }
+
+  const { question_id, selected_option } = req.body;
+
+  try {
+    if (selected_option === null) {
+      await pool.query(
+        "DELETE FROM student_response WHERE question_id=? AND test_session_id=?",
+        [question_id, test_session.id],
+      );
+
+      return res.status(200).send({
+        status: 200,
+        success: true,
+      });
+    }
+
+    await pool.query(
+      "INSERT INTO student_response (question_id, test_session_id, selected_option) VALUES (?, ?, ?) \
+        ON DUPLICATE KEY UPDATE \
+        selected_option = VALUES(selected_option), \
+        saved_at = CURRENT_TIMESTAMP",
+      [question_id, test_session.id, selected_option],
+    );
+
+    return res.status(200).send({
+      status: 200,
+      success: true,
+    });
+  } catch (err) {
+    return res.status(500).send({
+      status: 500,
+      success: false,
+      message: err.message || JSON.stringify(err),
+    });
+  }
+});
+
 module.exports = router;

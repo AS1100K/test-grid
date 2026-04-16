@@ -1,11 +1,4 @@
-import {
-  Box,
-  Button,
-  IconButton,
-  Paper,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Paper, Typography } from "@mui/material";
 
 export default function ExamOverview({
   sections,
@@ -44,20 +37,40 @@ export default function ExamOverview({
               }}
             >
               {section.questions.map((question, j) => {
+                let color;
+                let variant;
+                let sx;
+
+                if (question.status === "not_attempted") {
+                  color = "primary";
+                  variant = "outlined";
+                } else if (question.status === "saved") {
+                  color = "success";
+                  variant = "contained";
+                } else if (question.status === "marked_for_review") {
+                  sx = {
+                    backgroundColor: "purple",
+                    "&:hover": { backgroundColor: "rebeccapurple" },
+                  };
+                  variant = "contained";
+                }
+
                 return (
                   <Button
                     key={j}
-                    variant="outlined"
+                    variant={variant}
                     sx={{
                       borderRadius: 999,
                       width: 40,
                       height: 40,
                       minWidth: 0,
+                      ...sx,
                     }}
                     onClick={() => {
                       setCurrentSectionIndex(i);
                       setCurrentQuestionIndex(j);
                     }}
+                    color={color}
                   >
                     {j + 1}
                   </Button>

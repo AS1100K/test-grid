@@ -28,7 +28,7 @@ function App() {
             <Route
               index
               element={
-                <ProtectedRoute allowedRoles={["super_admin", "admin"]}>
+                <ProtectedRoute>
                   <Dashboard />
                 </ProtectedRoute>
               }

@@ -60,6 +60,7 @@ CREATE TABLE test_sessions (
 
     total_marks INT DEFAULT NULL,
     status ENUM('in_progress', 'submitted', 'terminated') DEFAULT 'in_progress',
+    start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (student_username) REFERENCES users(username),
     FOREIGN KEY (exam_id) REFERENCES exams(id),
@@ -73,7 +74,7 @@ CREATE TABLE student_response (
     test_session_id INT NOT NULL,
 
     selected_option ENUM('a', 'b', 'c', 'd') NOT NULL,
-    saved_at TIMESTAMP NOT NULL,
+    saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (question_id) REFERENCES questions(id),
     FOREIGN KEY (test_session_id) REFERENCES test_sessions(id)

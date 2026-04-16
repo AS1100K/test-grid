@@ -1,3 +1,4 @@
+import StudentExam from "../components/dashboard/StudentExam";
 import SuperAdmin from "../components/dashboard/SuperAdmin";
 import useAuth from "../contexts/useAuth";
 
@@ -11,8 +12,10 @@ function Dashboard() {
   switch (user.role) {
     case "super_admin":
       return <SuperAdmin />;
+    case "admin":
+      return <p>Dashboard WIP</p>;
     default:
-      return <p>Unsupported Role.</p>;
+      return <StudentExam />;
   }
 }
 

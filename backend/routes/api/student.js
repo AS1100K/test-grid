@@ -1,6 +1,10 @@
 const express = require("express");
 const pool = require("../../services/db");
 const { hasPermissions } = require("../../utils");
+const {
+  autoSubmitExpiredSession,
+  gradeSessionById,
+} = require("../../services/sessionGrading");
 
 const router = express.Router();
 
@@ -122,6 +126,11 @@ router.post("/start_exam", async function (req, res, _) {
   }
 
   if (session_status !== "in_progress") {
+    let result = null;
+    if (session_status === "submitted") {
+      result = await gradeSessionById(session_id);
+    }
+
     return res.status(200).send({
       status: 200,
       success: true,
@@ -129,39 +138,31 @@ router.post("/start_exam", async function (req, res, _) {
         session_id: session_id,
         status: session_status,
         start_time: session_start_time,
+        ...(result ? result : {}),
       },
     });
   }
 
   if (typeof examInfo[0].duration === "number") {
     try {
-      const startTime = new Date(session_start_time);
+      const result = await autoSubmitExpiredSession({
+        id: session_id,
+        status: session_status,
+        start_time: session_start_time,
+        duration: examInfo[0].duration,
+      });
 
-      // Ensure the start time is valid
-      if (!isNaN(startTime.getTime())) {
-        const now = new Date();
-        const elapsedMinutes = (now.getTime() - startTime.getTime()) / 60000;
-
-        if (elapsedMinutes >= examInfo[0].duration) {
-          if (session_status === "in_progress") {
-            await pool.query("UPDATE test_sessions SET status=? WHERE id=?", [
-              "submitted",
-              session_id,
-            ]);
-
-            // TODO: compute marks
-
-            return res.status(200).send({
-              status: 200,
-              success: true,
-              data: {
-                session_id: session_id,
-                status: "submitted",
-                start_time: session_start_time,
-              },
-            });
-          }
-        }
+      if (result) {
+        return res.status(200).send({
+          status: 200,
+          success: true,
+          data: {
+            session_id: session_id,
+            status: "submitted",
+            start_time: session_start_time,
+            ...result,
+          },
+        });
       }
     } catch (err) {
       return res.status(500).send({
@@ -265,20 +266,16 @@ router.post("/save_response", async function (req, res, _) {
     });
   }
 
-  const now = new Date();
-  const start_time = new Date(test_session.start_time);
-  const elapsedMinutes = (now.getTime() - start_time.getTime()) / 60_000;
-
-  if (elapsedMinutes >= test_session.duration) {
-    await pool.query("UPDATE test_sessions SET status=? WHERE id=?", [
-      "submitted",
-      test_session.id,
-    ]);
-
-    return res.status(401).send({
-      status: 401,
-      success: false,
-      message: "The exam is over.",
+  const autoSubmittedResult = await autoSubmitExpiredSession(test_session);
+  if (autoSubmittedResult) {
+    return res.status(200).send({
+      status: 200,
+      success: true,
+      data: {
+        status: "submitted",
+        ...autoSubmittedResult,
+      },
+      message: "The exam is over and has been submitted automatically.",
     });
   }
 
@@ -333,14 +330,24 @@ router.post("/submit", async function (req, res, _) {
   }
 
   try {
-    await pool.query(
-      "UPDATE test_sessions SET status=? WHERE student_username=? AND exam_id=?;",
-      ["submitted", permission.data.username, permission.data.assigned_exam_id],
+    const [sessions] = await pool.query(
+      "SELECT id FROM test_sessions WHERE student_username=? AND exam_id=? LIMIT 1;",
+      [permission.data.username, permission.data.assigned_exam_id],
     );
 
+    if (sessions.length !== 1) {
+      return res.status(400).send({
+        status: 400,
+        success: false,
+        message: "Invalid Exam Session.",
+      });
+    }
+
+    const result = await gradeSessionById(sessions[0].id);
     return res.status(200).send({
       status: 200,
       success: true,
+      data: result,
     });
   } catch (err) {
     return res.status(400).send({

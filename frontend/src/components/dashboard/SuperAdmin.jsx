@@ -16,10 +16,12 @@ import fetch_ from "../../utils";
 import useAuth from "../../contexts/useAuth";
 import useNotification from "../../contexts/useNotification";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 
 function SuperAdmin() {
   const { token } = useAuth();
   const { addNotification } = useNotification();
+  const navigate = useNavigate();
 
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,7 +36,6 @@ function SuperAdmin() {
         });
         if (!mounted) return;
 
-        // Handle API-level error: success === false
         if (res && res.success === false) {
           const message =
             res.message ||
@@ -46,17 +47,15 @@ function SuperAdmin() {
             description: message,
           });
 
-          setExams([]); // clear data on failure
+          setExams([]);
           return;
         }
 
-        // Normal success path
         setExams(res.data ?? []);
       } catch (err) {
         if (!mounted) return;
 
         const message = err?.message ?? String(err);
-
         addNotification({
           type: "error",
           title: "Failed to load exams",
@@ -174,7 +173,14 @@ function SuperAdmin() {
                 variant={exam.is_active ? "filled" : "outlined"}
               />
 
-              {/* Compact icon button for small screens */}
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => navigate(`/submissions/${exam.id}`)}
+              >
+                View submissions
+              </Button>
+
               <IconButton
                 href={`/exams/${exam.id}`}
                 color="primary"
@@ -184,7 +190,6 @@ function SuperAdmin() {
                 <EditIcon fontSize="small" />
               </IconButton>
 
-              {/* Full button for larger screens */}
               <Button
                 href={`/exams/${exam.id}`}
                 variant="outlined"

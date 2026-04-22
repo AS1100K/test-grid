@@ -24,6 +24,8 @@ export default function ExamQuestion({
   setCurrentQuestionIndex,
   loading,
   setLoading,
+  setExamStatus,
+  setSubmissionResult,
 }) {
   const { token } = useAuth();
   const { addNotification } = useNotification();
@@ -109,6 +111,16 @@ export default function ExamQuestion({
         message: res.message,
       });
 
+      setLoading(false);
+      return;
+    }
+
+    if (res.data?.status === "submitted") {
+      setSubmissionResult({
+        marks: res.data?.marks ?? 0,
+        percentage: res.data?.percentage ?? 0,
+      });
+      setExamStatus("submitted");
       setLoading(false);
       return;
     }

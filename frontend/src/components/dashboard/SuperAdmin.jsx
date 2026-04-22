@@ -12,6 +12,7 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import QuizIcon from "@mui/icons-material/Quiz";
 import AddIcon from "@mui/icons-material/Add";
+import LeaderboardIcon from "@mui/icons-material/Leaderboard";
 import fetch_ from "../../utils";
 import useAuth from "../../contexts/useAuth";
 import useNotification from "../../contexts/useNotification";
@@ -174,7 +175,16 @@ function SuperAdmin() {
                 variant={exam.is_active ? "filled" : "outlined"}
               />
 
-              {/* Compact icon button for small screens */}
+              {/* Compact icon buttons for small screens */}
+              <IconButton
+                href={`/exams/${exam.id}/results`}
+                color="secondary"
+                size="small"
+                sx={{ display: { xs: "inline-flex", sm: "none" } }}
+              >
+                <LeaderboardIcon fontSize="small" />
+              </IconButton>
+
               <IconButton
                 href={`/exams/${exam.id}`}
                 color="primary"
@@ -184,7 +194,22 @@ function SuperAdmin() {
                 <EditIcon fontSize="small" />
               </IconButton>
 
-              {/* Full button for larger screens */}
+              {/* Full buttons for larger screens */}
+              <Button
+                href={`/exams/${exam.id}/results`}
+                variant="contained"
+                color="secondary"
+                size="small"
+                startIcon={<LeaderboardIcon />}
+                sx={{
+                  textTransform: "none",
+                  borderRadius: 999,
+                  display: { xs: "none", sm: "inline-flex" },
+                }}
+              >
+                Results
+              </Button>
+
               <Button
                 href={`/exams/${exam.id}`}
                 variant="outlined"

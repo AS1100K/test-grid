@@ -1,5 +1,10 @@
 const express = require("express");
 const pool = require("../../services/db");
+const {
+  finalizeSession,
+  getTotalExamMarks,
+  computeSessionMarks,
+} = require("../../services/results");
 const { hasPermissions } = require("../../utils");
 
 const router = express.Router();
@@ -86,9 +91,10 @@ router.post("/start_exam", async function (req, res, _) {
   let session_id;
   let session_status;
   let session_start_time;
+  let session_total_marks;
 
   const [session] = await pool.query(
-    "SELECT id, status, start_time FROM test_sessions WHERE student_username=? AND exam_id=?",
+    "SELECT id, status, start_time, total_marks FROM test_sessions WHERE student_username=? AND exam_id=?",
     [permission.data.username, permission.data.assigned_exam_id],
   );
 
@@ -108,6 +114,7 @@ router.post("/start_exam", async function (req, res, _) {
       );
 
       session_start_time = newSession[0].start_time;
+      session_total_marks = newSession[0].total_marks;
     } catch (err) {
       return res.status(500).send({
         status: 500,
@@ -119,9 +126,42 @@ router.post("/start_exam", async function (req, res, _) {
     session_id = session[0].id;
     session_status = session[0].status;
     session_start_time = session[0].start_time;
+    session_total_marks = session[0].total_marks;
   }
 
+  try {
+    const updatedSession = await finalizeSession(
+      {
+        id: session_id,
+        status: session_status,
+        start_time: session_start_time,
+        total_marks: session_total_marks,
+      },
+      examInfo[0].duration,
+    );
+
+    session_status = updatedSession.status;
+    session_total_marks = updatedSession.total_marks;
+  } catch (err) {
+    return res.status(500).send({
+      status: 500,
+      success: false,
+      message: err.message,
+    });
+  }
+
+  const totalPossibleMarks = await getTotalExamMarks(
+    permission.data.assigned_exam_id,
+  );
+
   if (session_status !== "in_progress") {
+    const percentage =
+      session_total_marks != null && totalPossibleMarks > 0
+        ? Number(((session_total_marks / totalPossibleMarks) * 100).toFixed(2))
+        : session_total_marks != null
+          ? 0
+          : null;
+
     return res.status(200).send({
       status: 200,
       success: true,
@@ -129,47 +169,13 @@ router.post("/start_exam", async function (req, res, _) {
         session_id: session_id,
         status: session_status,
         start_time: session_start_time,
+        result: {
+          total_marks: session_total_marks ?? 0,
+          total_possible_marks: totalPossibleMarks,
+          percentage,
+        },
       },
     });
-  }
-
-  if (typeof examInfo[0].duration === "number") {
-    try {
-      const startTime = new Date(session_start_time);
-
-      // Ensure the start time is valid
-      if (!isNaN(startTime.getTime())) {
-        const now = new Date();
-        const elapsedMinutes = (now.getTime() - startTime.getTime()) / 60000;
-
-        if (elapsedMinutes >= examInfo[0].duration) {
-          if (session_status === "in_progress") {
-            await pool.query("UPDATE test_sessions SET status=? WHERE id=?", [
-              "submitted",
-              session_id,
-            ]);
-
-            // TODO: compute marks
-
-            return res.status(200).send({
-              status: 200,
-              success: true,
-              data: {
-                session_id: session_id,
-                status: "submitted",
-                start_time: session_start_time,
-              },
-            });
-          }
-        }
-      }
-    } catch (err) {
-      return res.status(500).send({
-        status: 500,
-        success: false,
-        message: err.message,
-      });
-    }
   }
 
   const [sections] = await pool.query(
@@ -243,7 +249,7 @@ router.post("/save_response", async function (req, res, _) {
   }
 
   const [session] = await pool.query(
-    "SELECT ts.id, ts.status, ts.start_time, e.duration FROM test_sessions ts LEFT JOIN exams e ON ts.exam_id = e.id WHERE ts.student_username=? AND ts.exam_id=?;",
+    "SELECT ts.id, ts.status, ts.start_time, ts.total_marks, e.duration FROM test_sessions ts LEFT JOIN exams e ON ts.exam_id = e.id WHERE ts.student_username=? AND ts.exam_id=?;",
     [permission.data.username, permission.data.assigned_exam_id],
   );
 
@@ -255,30 +261,34 @@ router.post("/save_response", async function (req, res, _) {
     });
   }
 
-  const test_session = session[0];
+  let test_session = session[0];
+
+  test_session = await finalizeSession(test_session, test_session.duration);
 
   if (test_session.status !== "in_progress") {
+    const totalPossibleMarks = await getTotalExamMarks(
+      permission.data.assigned_exam_id,
+    );
+    const percentage =
+      test_session.total_marks != null && totalPossibleMarks > 0
+        ? Number(
+            ((test_session.total_marks / totalPossibleMarks) * 100).toFixed(2),
+          )
+        : test_session.total_marks != null
+          ? 0
+          : null;
+
     return res.status(401).send({
       status: 401,
       success: false,
       message: "The exam is " + test_session.status,
-    });
-  }
-
-  const now = new Date();
-  const start_time = new Date(test_session.start_time);
-  const elapsedMinutes = (now.getTime() - start_time.getTime()) / 60_000;
-
-  if (elapsedMinutes >= test_session.duration) {
-    await pool.query("UPDATE test_sessions SET status=? WHERE id=?", [
-      "submitted",
-      test_session.id,
-    ]);
-
-    return res.status(401).send({
-      status: 401,
-      success: false,
-      message: "The exam is over.",
+      data: {
+        result: {
+          total_marks: test_session.total_marks ?? 0,
+          total_possible_marks: totalPossibleMarks,
+          percentage,
+        },
+      },
     });
   }
 
@@ -333,14 +343,59 @@ router.post("/submit", async function (req, res, _) {
   }
 
   try {
-    await pool.query(
-      "UPDATE test_sessions SET status=? WHERE student_username=? AND exam_id=?;",
-      ["submitted", permission.data.username, permission.data.assigned_exam_id],
+    const [sessionRows] = await pool.query(
+      "SELECT ts.id, ts.status, ts.total_marks, ts.start_time, e.duration FROM test_sessions ts LEFT JOIN exams e ON ts.exam_id = e.id WHERE ts.student_username=? AND ts.exam_id=?;",
+      [permission.data.username, permission.data.assigned_exam_id],
     );
+
+    if (sessionRows.length === 0) {
+      return res.status(404).send({
+        status: 404,
+        success: false,
+        message: "No active test session found to submit.",
+      });
+    }
+
+    let test_session = sessionRows[0];
+    const totalPossibleMarks = await getTotalExamMarks(
+      permission.data.assigned_exam_id,
+    );
+
+    test_session = await finalizeSession(test_session, test_session.duration);
+
+    if (test_session.status === "in_progress") {
+      await pool.query(
+        "UPDATE test_sessions SET status='submitted' WHERE id=?",
+        [test_session.id],
+      );
+      const totalMarks = await computeSessionMarks(test_session.id);
+      test_session.total_marks = totalMarks;
+
+      await pool.query(
+        "UPDATE test_sessions SET total_marks=? WHERE id=?",
+        [totalMarks, test_session.id],
+      );
+    }
+
+    const percentage =
+      test_session.total_marks != null && totalPossibleMarks > 0
+        ? Number(
+            ((test_session.total_marks / totalPossibleMarks) * 100).toFixed(2),
+          )
+        : test_session.total_marks != null
+          ? 0
+          : null;
 
     return res.status(200).send({
       status: 200,
       success: true,
+      data: {
+        result: {
+          total_marks: test_session.total_marks ?? 0,
+          total_possible_marks: totalPossibleMarks,
+          percentage,
+        },
+      },
     });
   } catch (err) {
     return res.status(400).send({

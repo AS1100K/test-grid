@@ -10,6 +10,7 @@ export function ExamInfo({
   setLoading,
   setExamError,
   setSections,
+  setResult,
 }) {
   const { token } = useAuth();
 
@@ -27,8 +28,17 @@ export function ExamInfo({
     }
 
     setExamStatus(res.data.status);
-    setStartTime(new Date(res.data.start_time));
-    setSections(res.data.data);
+    if (res.data?.start_time) {
+      setStartTime(new Date(res.data.start_time));
+    } else {
+      setStartTime(null);
+    }
+    if (res.data?.data) {
+      setSections(res.data.data);
+    }
+    if (res.data?.result) {
+      setResult(res.data.result);
+    }
 
     setLoading(false);
   }

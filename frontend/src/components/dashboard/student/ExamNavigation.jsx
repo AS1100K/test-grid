@@ -12,6 +12,8 @@ export default function ExamNavigation({
   hasStarted,
   setExamStatus,
   startTime,
+  setResult,
+  examStatus,
 }) {
   const { token, user } = useAuth();
   const { addNotification } = useNotification();
@@ -84,6 +86,9 @@ export default function ExamNavigation({
       }
 
       setExamStatus("submitted");
+      if (res.data?.result) {
+        setResult(res.data.result);
+      }
     }
   }
 
@@ -159,8 +164,12 @@ export default function ExamNavigation({
               )}
             </Stack>
 
-            <Button variant="contained" onClick={handleSubmit}>
-              Submit
+            <Button
+              variant="contained"
+              onClick={handleSubmit}
+              disabled={examStatus !== "in_progress"}
+            >
+              {examStatus === "submitted" ? "Submitted" : "Submit"}
             </Button>
           </Stack>
         </Box>

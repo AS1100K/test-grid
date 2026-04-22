@@ -22,6 +22,7 @@ export default function StudentExam() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1);
 
   const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
 
   if (examError !== null) {
     return (
@@ -53,6 +54,7 @@ export default function StudentExam() {
             setLoading={setLoading}
             setExamError={setExamError}
             setSections={setSections}
+            setResult={setResult}
           />
         );
       case "in_progress":
@@ -88,7 +90,53 @@ export default function StudentExam() {
           </Container>
         );
       case "submitted":
-        return "Your exam has been submitted";
+        return (
+          <Container maxWidth="md" sx={{ mt: 3 }}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 3,
+                borderRadius: 3,
+                border: "1px solid",
+                borderColor: "divider",
+              }}
+            >
+              <Stack spacing={2}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Your exam has been submitted
+                </Typography>
+
+                {result ? (
+                  <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }}>
+                    <Stack spacing={0.5}>
+                      <Typography variant="body2" color="text.secondary">
+                        Marks
+                      </Typography>
+                      <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                        {result.total_marks} / {result.total_possible_marks}
+                      </Typography>
+                    </Stack>
+
+                    <Stack spacing={0.5}>
+                      <Typography variant="body2" color="text.secondary">
+                        Percentage
+                      </Typography>
+                      <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                        {result.percentage != null
+                          ? `${result.percentage}%`
+                          : "Pending"}
+                      </Typography>
+                    </Stack>
+                  </Stack>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    Scores are being calculated. Please refresh after a moment.
+                  </Typography>
+                )}
+              </Stack>
+            </Paper>
+          </Container>
+        );
       case "terminated":
         return "Your exam has been terminated";
       default:
@@ -124,6 +172,8 @@ export default function StudentExam() {
         hasStarted={examStatus === "in_progress"}
         setExamStatus={setExamStatus}
         startTime={startTime}
+        setResult={setResult}
+        examStatus={examStatus}
       />
 
       {renderExamContent()}

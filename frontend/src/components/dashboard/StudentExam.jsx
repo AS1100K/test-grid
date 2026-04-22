@@ -16,6 +16,7 @@ export default function StudentExam() {
   const [startTime, setStartTime] = useState(null);
   const [examInfo, setExamInfo] = useState(null);
   const [examError, setExamError] = useState(null);
+  const [submissionResult, setSubmissionResult] = useState(null);
 
   const [sections, setSections] = useState([]);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
@@ -53,6 +54,7 @@ export default function StudentExam() {
             setLoading={setLoading}
             setExamError={setExamError}
             setSections={setSections}
+            setSubmissionResult={setSubmissionResult}
           />
         );
       case "in_progress":
@@ -78,6 +80,8 @@ export default function StudentExam() {
               setCurrentQuestionIndex={setCurrentQuestionIndex}
               loading={loading}
               setLoading={setLoading}
+              setExamStatus={setExamStatus}
+              setSubmissionResult={setSubmissionResult}
             />
 
             <ExamOverview
@@ -88,7 +92,21 @@ export default function StudentExam() {
           </Container>
         );
       case "submitted":
-        return "Your exam has been submitted";
+        return (
+          <Container maxWidth="md" sx={{ mt: 4 }}>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" sx={{ mb: 1 }}>
+                Your exam has been submitted
+              </Typography>
+              <Typography variant="body1">
+                Marks: {submissionResult?.marks ?? 0}
+              </Typography>
+              <Typography variant="body1">
+                Percentage: {submissionResult?.percentage ?? 0}%
+              </Typography>
+            </Paper>
+          </Container>
+        );
       case "terminated":
         return "Your exam has been terminated";
       default:
@@ -124,6 +142,7 @@ export default function StudentExam() {
         hasStarted={examStatus === "in_progress"}
         setExamStatus={setExamStatus}
         startTime={startTime}
+        setSubmissionResult={setSubmissionResult}
       />
 
       {renderExamContent()}

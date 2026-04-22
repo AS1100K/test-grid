@@ -10,6 +10,7 @@ export function ExamInfo({
   setLoading,
   setExamError,
   setSections,
+  setSubmissionResult,
 }) {
   const { token } = useAuth();
 
@@ -28,7 +29,13 @@ export function ExamInfo({
 
     setExamStatus(res.data.status);
     setStartTime(new Date(res.data.start_time));
-    setSections(res.data.data);
+    setSections(res.data.data ?? []);
+    if (res.data.status === "submitted") {
+      setSubmissionResult({
+        marks: res.data.marks ?? 0,
+        percentage: res.data.percentage ?? 0,
+      });
+    }
 
     setLoading(false);
   }

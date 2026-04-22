@@ -217,6 +217,10 @@ function SuperAdmin() {
     URL.revokeObjectURL(url);
   }
 
+  function formatPercent(value) {
+    return value == null ? "-" : `${value}%`;
+  }
+
   const renderContent = () => {
     if (loading) {
       return (
@@ -428,12 +432,8 @@ function SuperAdmin() {
                       <TableCell>{row.student_username}</TableCell>
                       <TableCell>{row.status}</TableCell>
                       <TableCell>{row.marks ?? "-"}</TableCell>
-                      <TableCell>
-                        {row.percentage == null ? "-" : `${row.percentage}%`}
-                      </TableCell>
-                      <TableCell>
-                        {row.percentile == null ? "-" : `${row.percentile}%`}
-                      </TableCell>
+                      <TableCell>{formatPercent(row.percentage)}</TableCell>
+                      <TableCell>{formatPercent(row.percentile)}</TableCell>
                       <TableCell>
                         <Button
                           size="small"
@@ -509,8 +509,8 @@ function SuperAdmin() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {responseRows.map((row, idx) => (
-                <TableRow key={`${row.section_order}-${row.question_order}-${idx}`}>
+              {responseRows.map((row) => (
+                <TableRow key={`${row.section_order}-${row.question_order}`}>
                   <TableCell>{row.section_name}</TableCell>
                   <TableCell>{row.question_order}</TableCell>
                   <TableCell>{row.selected_option ?? "-"}</TableCell>

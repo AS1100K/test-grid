@@ -8,15 +8,15 @@ const { getExamTotalMarks } = require("../../services/sessionGrading");
 
 const router = express.Router();
 
-const ALLOWED_SORT_FIELDS = new Set([
-  "student_username",
-  "marks",
-  "percentage",
-  "percentile",
-]);
+const SORT_SQL_MAP = Object.freeze({
+  student_username: "ts.student_username",
+  marks: "ts.total_marks",
+  percentage: "percentage",
+  percentile: "ranks.percentile",
+});
 
 function sanitizeSort(sortBy, sortOrder) {
-  const safeSortBy = ALLOWED_SORT_FIELDS.has(sortBy) ? sortBy : "marks";
+  const safeSortBy = Object.hasOwn(SORT_SQL_MAP, sortBy) ? sortBy : "marks";
   const safeSortOrder = String(sortOrder || "").toUpperCase() === "ASC" ? "ASC" : "DESC";
   return {
     safeSortBy,
@@ -30,9 +30,10 @@ function toCsvSafeValue(value) {
   }
 
   const str = String(value);
-  const formulaPrefixes = ["=", "+", "-", "@"];
-  const safe =
-    formulaPrefixes.includes(str.charAt(0).trim()) ? `'${str}` : str;
+  const trimmed = str.trimStart();
+  const requiresEscaping =
+    /^[=+\-@]/.test(trimmed) || str.startsWith("\t") || str.startsWith("\r");
+  const safe = requiresEscaping ? `'${str}` : str;
   return `"${safe.replace(/"/g, '""')}"`;
 }
 
@@ -186,14 +187,7 @@ router.get("/:exam_id/submissions", async function (req, res, _) {
     req.query.sort_by,
     req.query.sort_order,
   );
-  const sortExpr =
-    safeSortBy === "marks"
-      ? "ts.total_marks"
-      : safeSortBy === "percentage"
-        ? "percentage"
-        : safeSortBy === "percentile"
-          ? "ranks.percentile"
-          : "ts.student_username";
+  const sortExpr = SORT_SQL_MAP[safeSortBy];
 
   const [rows] = await pool.query(
     `SELECT

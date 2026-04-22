@@ -77,5 +77,6 @@ CREATE TABLE student_response (
     saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (question_id) REFERENCES questions(id),
-    FOREIGN KEY (test_session_id) REFERENCES test_sessions(id)
+    FOREIGN KEY (test_session_id) REFERENCES test_sessions(id),
+    UNIQUE (test_session_id, question_id)
 );

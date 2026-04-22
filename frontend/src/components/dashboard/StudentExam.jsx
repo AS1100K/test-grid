@@ -1,12 +1,25 @@
 import { useState } from "react";
-import { Paper, Stack, Typography, LinearProgress } from "@mui/material";
+import {
+  Paper,
+  Stack,
+  Typography,
+  LinearProgress,
+  Container,
+} from "@mui/material";
 import ExamNavigation from "./student/ExamNavigation";
 import { ExamInfo } from "./student/ExamInfo";
+import ExamQuestion from "./student/ExamQuestion";
+import ExamOverview from "./student/ExamOverview";
 
 export default function StudentExam() {
-  const [hasStarted, setHasStarted] = useState(false);
+  const [examStatus, setExamStatus] = useState("not_started");
+  const [startTime, setStartTime] = useState(null);
   const [examInfo, setExamInfo] = useState(null);
   const [examError, setExamError] = useState(null);
+
+  const [sections, setSections] = useState([]);
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1);
 
   const [loading, setLoading] = useState(false);
 
@@ -23,10 +36,64 @@ export default function StudentExam() {
         }}
       >
         <Typography variant="subtitle1" gutterBottom>
-          {examError.message}
+          {examError}
         </Typography>
       </Paper>
     );
+  }
+
+  function renderExamContent() {
+    switch (examStatus) {
+      case "not_started":
+        return (
+          <ExamInfo
+            setExamStatus={setExamStatus}
+            setStartTime={setStartTime}
+            loading={loading}
+            setLoading={setLoading}
+            setExamError={setExamError}
+            setSections={setSections}
+          />
+        );
+      case "in_progress":
+        return (
+          <Container
+            maxWidth="lg"
+            sx={{
+              mt: 3,
+              display: "flex",
+              flexDirection: {
+                xs: "column-reverse",
+                md: "row",
+              },
+              gap: 2,
+            }}
+          >
+            <ExamQuestion
+              sections={sections}
+              setSections={setSections}
+              currentSectionIndex={currentSectionIndex}
+              setCurrentSectionIndex={setCurrentSectionIndex}
+              currentQuestionIndex={currentQuestionIndex}
+              setCurrentQuestionIndex={setCurrentQuestionIndex}
+              loading={loading}
+              setLoading={setLoading}
+            />
+
+            <ExamOverview
+              sections={sections}
+              setCurrentSectionIndex={setCurrentSectionIndex}
+              setCurrentQuestionIndex={setCurrentQuestionIndex}
+            />
+          </Container>
+        );
+      case "submitted":
+        return "Your exam has been submitted";
+      case "terminated":
+        return "Your exam has been terminated";
+      default:
+        return "Unknown Exam Status";
+    }
   }
 
   return (
@@ -54,18 +121,12 @@ export default function StudentExam() {
         examInfo={examInfo}
         setExamInfo={setExamInfo}
         setExamError={setExamError}
-        hasStarted={hasStarted}
+        hasStarted={examStatus === "in_progress"}
+        setExamStatus={setExamStatus}
+        startTime={startTime}
       />
 
-      {hasStarted ? (
-        "TODO: To be implemented"
-      ) : (
-        <ExamInfo
-          setHasStarted={setHasStarted}
-          loading={loading}
-          setLoading={setLoading}
-        />
-      )}
+      {renderExamContent()}
     </>
   );
 }

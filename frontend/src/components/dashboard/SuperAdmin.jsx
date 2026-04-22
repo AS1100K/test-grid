@@ -7,12 +7,6 @@ import {
   LinearProgress,
   Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TableSortLabel,
   Typography,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
@@ -30,12 +24,6 @@ function SuperAdmin() {
   const navigate = useNavigate();
 
   const [exams, setExams] = useState([]);
-  const [selectedExamId, setSelectedExamId] = useState(null);
-  const [submissionsLoading, setSubmissionsLoading] = useState(false);
-  const [sortBy, setSortBy] = useState("marks");
-  const [sortOrder, setSortOrder] = useState("desc");
-  const [submissionRows, setSubmissionRows] = useState([]);
-  const [highestMarks, setHighestMarks] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,7 +36,6 @@ function SuperAdmin() {
         });
         if (!mounted) return;
 
-        // Handle API-level error: success === false
         if (res && res.success === false) {
           const message =
             res.message ||
@@ -60,21 +47,15 @@ function SuperAdmin() {
             description: message,
           });
 
-          setExams([]); // clear data on failure
+          setExams([]);
           return;
         }
 
-        // Normal success path
-        const examList = res.data ?? [];
-        setExams(examList);
-        if (examList.length > 0) {
-          setSelectedExamId(examList[0].id);
-        }
+        setExams(res.data ?? []);
       } catch (err) {
         if (!mounted) return;
 
         const message = err?.message ?? String(err);
-
         addNotification({
           type: "error",
           title: "Failed to load exams",
@@ -90,104 +71,6 @@ function SuperAdmin() {
       mounted = false;
     };
   }, [token, addNotification]);
-
-  useEffect(() => {
-    if (!selectedExamId) {
-      setSubmissionRows([]);
-      setHighestMarks(0);
-      return;
-    }
-
-    let mounted = true;
-
-    async function loadSubmissions() {
-      setSubmissionsLoading(true);
-      try {
-        const res = await fetch_(
-          "GET",
-          `/api/exams/${selectedExamId}/submissions?sort_by=${sortBy}&sort_order=${sortOrder}`,
-          null,
-          {
-            Authorization: `Bearer ${token}`,
-          },
-        );
-
-        if (!mounted) return;
-        if (!res.success) {
-          addNotification({
-            type: "error",
-            title: "Failed to load submissions",
-            description: res.message ?? "Unexpected server response.",
-          });
-          return;
-        }
-
-        setSubmissionRows(res.data?.rows ?? []);
-        setHighestMarks(res.data?.highest_marks ?? 0);
-      } catch (err) {
-        if (!mounted) return;
-        addNotification({
-          type: "error",
-          title: "Failed to load submissions",
-          description: err?.message ?? String(err),
-        });
-      } finally {
-        if (mounted) setSubmissionsLoading(false);
-      }
-    }
-
-    loadSubmissions();
-
-    return () => {
-      mounted = false;
-    };
-  }, [selectedExamId, sortBy, sortOrder, token, addNotification]);
-
-  async function handleSort(column) {
-    if (sortBy === column) {
-      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-      return;
-    }
-    setSortBy(column);
-    setSortOrder("desc");
-  }
-
-  async function handleDownload(kind) {
-    if (!selectedExamId) return;
-
-    const endpoint =
-      kind === "summary"
-        ? `/api/exams/${selectedExamId}/submissions/export/summary`
-        : `/api/exams/${selectedExamId}/submissions/export/full`;
-
-    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}${endpoint}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      addNotification({
-        type: "error",
-        title: "Download failed",
-        description: "Unable to export student data.",
-      });
-      return;
-    }
-
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `exam-${selectedExamId}-${kind}.xls`;
-    anchor.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function formatPercent(value) {
-    return value == null ? "-" : `${value}%`;
-  }
 
   const renderContent = () => {
     if (loading) {
@@ -292,8 +175,8 @@ function SuperAdmin() {
 
               <Button
                 size="small"
-                variant={selectedExamId === exam.id ? "contained" : "outlined"}
-                onClick={() => setSelectedExamId(exam.id)}
+                variant="outlined"
+                onClick={() => navigate(`/submissions/${exam.id}`)}
               >
                 View submissions
               </Button>
@@ -323,105 +206,6 @@ function SuperAdmin() {
             </Stack>
           </Paper>
         ))}
-
-        {selectedExamId && (
-          <Paper elevation={1} sx={{ p: 2, borderRadius: 3 }}>
-            <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-              <Chip
-                label={`Highest Marks: ${highestMarks ?? 0}`}
-                color="secondary"
-                variant="filled"
-              />
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => handleDownload("summary")}
-              >
-                Download Summary Excel
-              </Button>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => handleDownload("full")}
-              >
-                Download Full Excel
-              </Button>
-            </Stack>
-
-            {submissionsLoading ? (
-              <LinearProgress />
-            ) : (
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>
-                      <TableSortLabel
-                        active={sortBy === "student_username"}
-                        direction={sortBy === "student_username" ? sortOrder : "asc"}
-                        onClick={() => handleSort("student_username")}
-                      >
-                        Username
-                      </TableSortLabel>
-                    </TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>
-                      <TableSortLabel
-                        active={sortBy === "marks"}
-                        direction={sortBy === "marks" ? sortOrder : "asc"}
-                        onClick={() => handleSort("marks")}
-                      >
-                        Marks
-                      </TableSortLabel>
-                    </TableCell>
-                    <TableCell>
-                      <TableSortLabel
-                        active={sortBy === "percentage"}
-                        direction={sortBy === "percentage" ? sortOrder : "asc"}
-                        onClick={() => handleSort("percentage")}
-                      >
-                        Percentage
-                      </TableSortLabel>
-                    </TableCell>
-                    <TableCell>
-                      <TableSortLabel
-                        active={sortBy === "percentile"}
-                        direction={sortBy === "percentile" ? sortOrder : "asc"}
-                        onClick={() => handleSort("percentile")}
-                      >
-                        Percentile
-                      </TableSortLabel>
-                    </TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {submissionRows.map((row) => (
-                    <TableRow key={row.session_id}>
-                      <TableCell>{row.student_username}</TableCell>
-                      <TableCell>{row.status}</TableCell>
-                      <TableCell>{row.marks ?? "-"}</TableCell>
-                      <TableCell>{formatPercent(row.percentage)}</TableCell>
-                      <TableCell>{formatPercent(row.percentile)}</TableCell>
-                      <TableCell>
-                        <Button
-                          size="small"
-                          variant="text"
-                          onClick={() =>
-                            navigate(
-                              `/submissions/${selectedExamId}/${encodeURIComponent(row.student_username)}/responses`,
-                            )
-                          }
-                        >
-                          View responses
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </Paper>
-        )}
       </Stack>
     );
   };

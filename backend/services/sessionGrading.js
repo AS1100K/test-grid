@@ -73,9 +73,38 @@ async function autoSubmitExpiredSession(session) {
   return gradeSessionById(session.id);
 }
 
+async function reconcileExamSessions(examId) {
+  const [sessions] = await pool.query(
+    "SELECT ts.id, ts.status, ts.total_marks, ts.start_time, e.duration FROM test_sessions ts INNER JOIN exams e ON e.id = ts.exam_id WHERE ts.exam_id=? AND (ts.status='in_progress' OR (ts.status='submitted' AND ts.total_marks IS NULL));",
+    [examId],
+  );
+
+  let updated = 0;
+  for (const session of sessions) {
+    if (session.status === "submitted" && session.total_marks === null) {
+      await gradeSessionById(session.id);
+      updated += 1;
+      continue;
+    }
+
+    if (
+      session.status === "in_progress" &&
+      isSessionExpired(session.start_time, session.duration)
+    ) {
+      await gradeSessionById(session.id);
+      updated += 1;
+    }
+  }
+
+  return {
+    updated_sessions: updated,
+  };
+}
+
 module.exports = {
   autoSubmitExpiredSession,
   getExamTotalMarks,
   gradeSessionById,
   isSessionExpired,
+  reconcileExamSessions,
 };

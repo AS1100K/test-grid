@@ -4,7 +4,10 @@ const { hasPermissions } = require("../../utils");
 const parsePaperRouter = require("./exams/parse_paper");
 const questionsRouter = require("./exams/questions");
 const paperRouter = require("./exams/paper");
-const { getExamTotalMarks } = require("../../services/sessionGrading");
+const {
+  getExamTotalMarks,
+  reconcileExamSessions,
+} = require("../../services/sessionGrading");
 
 const router = express.Router();
 
@@ -43,6 +46,20 @@ function toCsv(headers, rows) {
     headers.map((h) => toCsvSafeValue(row[h.key])).join(","),
   );
   return [headerLine, ...dataLines].join("\n");
+}
+
+async function tryReconcileExam(res, examId) {
+  try {
+    await reconcileExamSessions(examId);
+    return true;
+  } catch (err) {
+    res.status(500).send({
+      status: 500,
+      success: false,
+      message: `Failed to reconcile exam sessions. ${err.message}`,
+    });
+    return false;
+  }
 }
 
 router.use("/parse_paper", parsePaperRouter);
@@ -188,6 +205,9 @@ router.get("/:exam_id/submissions", async function (req, res, _) {
     req.query.sort_order,
   );
   const sortExpr = SORT_SQL_MAP[safeSortBy];
+  if (!(await tryReconcileExam(res, examId))) {
+    return;
+  }
 
   const [rows] = await pool.query(
     `SELECT
@@ -251,6 +271,9 @@ router.get("/:exam_id/submissions/:student_username/responses", async function (
       message: "Invalid request.",
     });
   }
+  if (!(await tryReconcileExam(res, examId))) {
+    return;
+  }
 
   const [sessions] = await pool.query(
     "SELECT id, total_marks, status FROM test_sessions WHERE exam_id=? AND student_username=? LIMIT 1;",
@@ -305,6 +328,9 @@ router.get("/:exam_id/submissions/export/summary", async function (req, res, _) 
       message: "Invalid exam id.",
     });
   }
+  if (!(await tryReconcileExam(res, examId))) {
+    return;
+  }
 
   const [rows] = await pool.query(
     "SELECT ts.student_username, ts.total_marks AS marks, CASE WHEN et.total_exam_marks > 0 AND ts.total_marks IS NOT NULL THEN ROUND((ts.total_marks * 100) / et.total_exam_marks, 2) ELSE NULL END AS percentage, ranks.percentile FROM test_sessions ts INNER JOIN (SELECT COALESCE(SUM(COALESCE(q.marks, 0)), 0) AS total_exam_marks FROM sections s INNER JOIN questions q ON q.section_id = s.id WHERE s.exam_id=?) et LEFT JOIN (SELECT id, ROUND(PERCENT_RANK() OVER (ORDER BY total_marks) * 100, 2) AS percentile FROM test_sessions WHERE exam_id=? AND status='submitted' AND total_marks IS NOT NULL) ranks ON ranks.id = ts.id WHERE ts.exam_id=? ORDER BY ts.student_username ASC;",
@@ -342,6 +368,9 @@ router.get("/:exam_id/submissions/export/full", async function (req, res, _) {
       success: false,
       message: "Invalid exam id.",
     });
+  }
+  if (!(await tryReconcileExam(res, examId))) {
+    return;
   }
 
   const [rows] = await pool.query(

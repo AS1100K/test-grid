@@ -47,7 +47,7 @@ export default function ExamNavigation({
       });
 
       if (!res.success) {
-        setExamError(res);
+        setExamError(res.message);
         return;
       }
 

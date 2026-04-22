@@ -121,6 +121,18 @@ router.post("/start_exam", async function (req, res, _) {
     session_start_time = session[0].start_time;
   }
 
+  if (session_status !== "in_progress") {
+    return res.status(200).send({
+      status: 200,
+      success: true,
+      data: {
+        session_id: session_id,
+        status: session_status,
+        start_time: session_start_time,
+      },
+    });
+  }
+
   if (typeof examInfo[0].duration === "number") {
     try {
       const startTime = new Date(session_start_time);
@@ -131,10 +143,7 @@ router.post("/start_exam", async function (req, res, _) {
         const elapsedMinutes = (now.getTime() - startTime.getTime()) / 60000;
 
         if (elapsedMinutes >= examInfo[0].duration) {
-          if (
-            session_status !== "completed" &&
-            session_status !== "submitted"
-          ) {
+          if (session_status === "in_progress") {
             await pool.query("UPDATE test_sessions SET status=? WHERE id=?", [
               "submitted",
               session_id,
@@ -229,7 +238,7 @@ router.post("/start_exam", async function (req, res, _) {
 
 router.post("/save_response", async function (req, res, _) {
   const permission = await hasPermissions(req.headers.authorization, "student");
-  if (!permission.status) {
+  if (!permission.success) {
     return res.status(permission.status).send(permission);
   }
 
@@ -288,6 +297,14 @@ router.post("/save_response", async function (req, res, _) {
       });
     }
 
+    if (!["a", "b", "c", "d"].includes(selected_option)) {
+      return res.status(400).send({
+        status: 400,
+        success: false,
+        message: "Invalid option selected.",
+      });
+    }
+
     await pool.query(
       "INSERT INTO student_response (question_id, test_session_id, selected_option) VALUES (?, ?, ?) \
         ON DUPLICATE KEY UPDATE \
@@ -311,25 +328,25 @@ router.post("/save_response", async function (req, res, _) {
 
 router.post("/submit", async function (req, res, _) {
   const permission = await hasPermissions(req.headers.authorization, "student");
-  if (!permission.status) {
+  if (!permission.success) {
     return res.status(permission.status).send(permission);
   }
 
-  const [sessions] = await pool.query(
-    "UPDATE test_sessions SET status=? WHERE student_username=? AND exam_id=?;",
-    ["submitted", permission.data.username, permission.data.assigned_exam_id],
-  );
+  try {
+    await pool.query(
+      "UPDATE test_sessions SET status=? WHERE student_username=? AND exam_id=?;",
+      ["submitted", permission.data.username, permission.data.assigned_exam_id],
+    );
 
-  if (sessions.affectedRows !== 0) {
     return res.status(200).send({
       status: 200,
       success: true,
     });
-  } else {
+  } catch (err) {
     return res.status(400).send({
       status: 400,
       success: false,
-      message: "Invalid Exam Session",
+      message: `Invalid Exam Session: ${err.message}`,
     });
   }
 });

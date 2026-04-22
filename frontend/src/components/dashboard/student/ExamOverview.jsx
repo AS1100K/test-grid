@@ -13,7 +13,7 @@ export default function ExamOverview({
             <Typography variant="overline">{section.name}</Typography>
 
             <br />
-            {section.instructions !== null && (
+            {typeof section.instructions === "string" && (
               <Button
                 size="small"
                 fullWidth

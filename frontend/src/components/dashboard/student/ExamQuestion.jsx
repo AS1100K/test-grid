@@ -114,6 +114,7 @@ export default function ExamQuestion({
     }
 
     updateQuestionStatus();
+    handleNext();
     setLoading(false);
   }
 

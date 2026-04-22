@@ -8,6 +8,7 @@ import ToastNotification from "./components/ToastNotification.jsx";
 import NavBar from "./components/NavBar.jsx";
 import Exams from "./pages/Exams.jsx";
 import NewUser from "./pages/NewUser.jsx";
+import SubmissionResponses from "./pages/SubmissionResponses.jsx";
 
 function App() {
   return (
@@ -46,6 +47,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={["super_admin"]}>
                   <Exams />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/submissions/:exam_id/:student_username/responses"
+              element={
+                <ProtectedRoute allowedRoles={["super_admin"]}>
+                  <SubmissionResponses />
                 </ProtectedRoute>
               }
             />

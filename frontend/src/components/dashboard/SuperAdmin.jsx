@@ -3,9 +3,6 @@ import {
   Button,
   Chip,
   Container,
-  Dialog,
-  DialogContent,
-  DialogTitle,
   IconButton,
   LinearProgress,
   Paper,
@@ -25,10 +22,12 @@ import fetch_ from "../../utils";
 import useAuth from "../../contexts/useAuth";
 import useNotification from "../../contexts/useNotification";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 
 function SuperAdmin() {
   const { token } = useAuth();
   const { addNotification } = useNotification();
+  const navigate = useNavigate();
 
   const [exams, setExams] = useState([]);
   const [selectedExamId, setSelectedExamId] = useState(null);
@@ -37,9 +36,6 @@ function SuperAdmin() {
   const [sortOrder, setSortOrder] = useState("desc");
   const [submissionRows, setSubmissionRows] = useState([]);
   const [highestMarks, setHighestMarks] = useState(0);
-  const [responseDialogOpen, setResponseDialogOpen] = useState(false);
-  const [responseDialogTitle, setResponseDialogTitle] = useState("");
-  const [responseRows, setResponseRows] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -154,34 +150,6 @@ function SuperAdmin() {
     }
     setSortBy(column);
     setSortOrder("desc");
-  }
-
-  async function handleViewResponses(studentUsername) {
-    if (!selectedExamId) return;
-
-    const res = await fetch_(
-      "GET",
-      `/api/exams/${selectedExamId}/submissions/${studentUsername}/responses`,
-      null,
-      {
-        Authorization: `Bearer ${token}`,
-      },
-    );
-
-    if (!res.success) {
-      addNotification({
-        type: "error",
-        title: "Failed to load responses",
-        description: res.message ?? "Unexpected server response.",
-      });
-      return;
-    }
-
-    setResponseDialogTitle(
-      `${res.data.student_username} • ${res.data.marks ?? 0} marks • ${res.data.percentage ?? 0}%`,
-    );
-    setResponseRows(res.data.responses ?? []);
-    setResponseDialogOpen(true);
   }
 
   async function handleDownload(kind) {
@@ -438,7 +406,11 @@ function SuperAdmin() {
                         <Button
                           size="small"
                           variant="text"
-                          onClick={() => handleViewResponses(row.student_username)}
+                          onClick={() =>
+                            navigate(
+                              `/submissions/${selectedExamId}/${encodeURIComponent(row.student_username)}/responses`,
+                            )
+                          }
                         >
                           View responses
                         </Button>
@@ -489,39 +461,6 @@ function SuperAdmin() {
       </Box>
 
       {renderContent()}
-
-      <Dialog
-        open={responseDialogOpen}
-        onClose={() => setResponseDialogOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>{responseDialogTitle}</DialogTitle>
-        <DialogContent>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Section</TableCell>
-                <TableCell>Question</TableCell>
-                <TableCell>Selected</TableCell>
-                <TableCell>Correct</TableCell>
-                <TableCell>Marks</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {responseRows.map((row) => (
-                <TableRow key={`${row.section_order}-${row.question_order}`}>
-                  <TableCell>{row.section_name}</TableCell>
-                  <TableCell>{row.question_order}</TableCell>
-                  <TableCell>{row.selected_option ?? "-"}</TableCell>
-                  <TableCell>{row.correct_option}</TableCell>
-                  <TableCell>{row.marks_awarded}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </DialogContent>
-      </Dialog>
     </Container>
   );
 }

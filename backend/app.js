@@ -23,9 +23,10 @@ const frontendBuildPath = path.resolve("public");
 const frontendEntryPath = path.join(frontendBuildPath, "index.html");
 
 if (fs.existsSync(frontendEntryPath)) {
+  const frontendIndex = fs.readFileSync(frontendEntryPath, "utf8");
   app.use(express.static(frontendBuildPath));
-  app.get(/^(?!\/api(?:\/|$)).*/, function (_, res) {
-    res.sendFile(frontendEntryPath);
+  app.get(/^(?!\/api(?:\/|$)).*/, function serveSpaFallback(req, res) {
+    res.type("html").send(frontendIndex);
   });
 }
 

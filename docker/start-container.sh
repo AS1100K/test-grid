@@ -70,6 +70,13 @@ if ! kill -0 "${app_pid}" 2>/dev/null; then
 fi
 
 term_handler
-wait "${mysql_pid}" "${app_pid}" 2>/dev/null || true
+
+if kill -0 "${mysql_pid}" 2>/dev/null; then
+  wait "${mysql_pid}" 2>/dev/null || true
+fi
+
+if kill -0 "${app_pid}" 2>/dev/null; then
+  wait "${app_pid}" 2>/dev/null || true
+fi
 
 exit "${exit_code}"

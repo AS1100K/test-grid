@@ -27,10 +27,10 @@ mysql_ready() {
 
 term_handler() {
   if [[ -n "${app_pid:-}" ]]; then
-    kill "${app_pid}" 2>/dev/null || true
+    kill -TERM "${app_pid}" 2>/dev/null || true
   fi
   if [[ -n "${mysql_pid:-}" ]]; then
-    kill "${mysql_pid}" 2>/dev/null || true
+    kill -TERM "${mysql_pid}" 2>/dev/null || true
   fi
 }
 
@@ -39,7 +39,7 @@ trap term_handler SIGTERM SIGINT
 /usr/local/bin/docker-entrypoint.sh mysqld &
 mysql_pid=$!
 
-for _ in $(seq 1 "${MAX_MYSQL_WAIT_ITERATIONS}"); do
+for ((i = 1; i <= MAX_MYSQL_WAIT_ITERATIONS; i++)); do
   if mysql_ready; then
     break
   fi
@@ -51,8 +51,8 @@ if ! mysql_ready; then
   exit 1
 fi
 
-node ./create_default_user.js
-node ./server.js &
+gosu mysql node ./create_default_user.js
+gosu mysql node ./server.js &
 app_pid=$!
 
 # Exit the container if either MySQL or the Node app exits.
@@ -60,6 +60,14 @@ set +e
 wait -n "${mysql_pid}" "${app_pid}"
 exit_code=$?
 set -e
+
+if ! kill -0 "${mysql_pid}" 2>/dev/null; then
+  echo "MySQL exited."
+fi
+
+if ! kill -0 "${app_pid}" 2>/dev/null; then
+  echo "Application server exited."
+fi
 
 term_handler
 wait "${mysql_pid}" "${app_pid}" 2>/dev/null || true

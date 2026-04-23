@@ -36,4 +36,4 @@ Open the app at `http://localhost:5000`.
 - Container startup will fail if placeholder secret values are left unchanged.
 - Expose only port `5000` unless direct DB access is required.
 - Back up the Docker volume regularly.
-- Full source extraction from a delivered container image cannot be made impossible; this setup only raises the effort required.
+- Full source extraction from a delivered container image cannot be made impossible; bundling/minification is only a light deterrent and should not be treated as strong code protection.

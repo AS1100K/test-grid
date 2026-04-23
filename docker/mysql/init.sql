@@ -48,8 +48,24 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('super_admin', 'admin', 'student'),
     assigned_exam_id INT,
+    name VARCHAR(255),
+    roll_number VARCHAR(100),
+    dob DATE,
+    email_id VARCHAR(255),
+    phone_number VARCHAR(50),
     FOREIGN KEY (assigned_exam_id) REFERENCES exams(id),
-    CHECK (assigned_exam_id IS NULL OR role = 'student')
+    CHECK (assigned_exam_id IS NULL OR role = 'student'),
+    CHECK (
+        role <> 'student' OR (
+            name IS NOT NULL AND
+            roll_number IS NOT NULL AND
+            dob IS NOT NULL AND
+            email_id IS NOT NULL AND
+            phone_number IS NOT NULL
+        )
+    ),
+    UNIQUE (roll_number),
+    UNIQUE (email_id)
 );
 
 CREATE TABLE test_sessions (

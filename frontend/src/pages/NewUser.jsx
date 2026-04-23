@@ -26,12 +26,22 @@ export default function NewUser() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("student");
+  const [name, setName] = useState("");
+  const [rollNumber, setRollNumber] = useState("");
+  const [dob, setDob] = useState("");
+  const [emailId, setEmailId] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [assignedExamId, setAssignedExamId] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const [errors, setErrors] = useState({
     username: "",
     password: "",
+    name: "",
+    rollNumber: "",
+    dob: "",
+    emailId: "",
+    phoneNumber: "",
     role: "",
     assignedExamId: "",
   });
@@ -61,28 +71,55 @@ export default function NewUser() {
     const nextErrors = {
       username: "",
       password: "",
+      name: "",
+      rollNumber: "",
+      dob: "",
+      emailId: "",
+      phoneNumber: "",
       role: "",
       assignedExamId: "",
     };
     let valid = true;
-
-    if (!username.trim()) {
-      nextErrors.username = "Username is required.";
-      valid = false;
-    }
-
-    if (!password.trim()) {
-      nextErrors.password = "Password is required.";
-      valid = false;
-    }
 
     if (!role) {
       nextErrors.role = "Role is required.";
       valid = false;
     }
 
-    // assigned_exam_id is only relevant for student and is optional,
-    // so no validation needed unless you decide otherwise later.
+    if (role === "admin" && !username.trim()) {
+      nextErrors.username = "Username is required.";
+      valid = false;
+    }
+
+    if (role === "admin" && !password.trim()) {
+      nextErrors.password = "Password is required.";
+      valid = false;
+    }
+
+    if (role === "student" && !name.trim()) {
+      nextErrors.name = "Name is required.";
+      valid = false;
+    }
+
+    if (role === "student" && !rollNumber.trim()) {
+      nextErrors.rollNumber = "Roll number is required.";
+      valid = false;
+    }
+
+    if (role === "student" && !dob) {
+      nextErrors.dob = "DOB is required.";
+      valid = false;
+    }
+
+    if (role === "student" && !emailId.trim()) {
+      nextErrors.emailId = "Email ID is required.";
+      valid = false;
+    }
+
+    if (role === "student" && !phoneNumber.trim()) {
+      nextErrors.phoneNumber = "Phone number is required.";
+      valid = false;
+    }
 
     setErrors(nextErrors);
     return valid;
@@ -95,12 +132,23 @@ export default function NewUser() {
     setSubmitting(true);
 
     try {
-      const payload = {
-        username: username.trim(),
-        password: password.trim(),
-        role,
-        assigned_exam_id: role === "student" ? assignedExamId : null,
-      };
+      const payload =
+        role === "student"
+          ? {
+              role,
+              name: name.trim(),
+              roll_number: rollNumber.trim(),
+              dob,
+              email_id: emailId.trim(),
+              phone_number: phoneNumber.trim(),
+              assigned_exam_id: assignedExamId === "" ? null : assignedExamId,
+            }
+          : {
+              username: username.trim(),
+              password: password.trim(),
+              role,
+              assigned_exam_id: null,
+            };
 
       const res = await fetch_("POST", "/api/users", payload, {
         Authorization: `Bearer ${token}`,
@@ -135,10 +183,20 @@ export default function NewUser() {
     setUsername("");
     setPassword("");
     setRole("student");
+    setName("");
+    setRollNumber("");
+    setDob("");
+    setEmailId("");
+    setPhoneNumber("");
     setAssignedExamId("");
     setErrors({
       username: "",
       password: "",
+      name: "",
+      rollNumber: "",
+      dob: "",
+      emailId: "",
+      phoneNumber: "",
       role: "",
       assignedExamId: "",
     });
@@ -153,8 +211,8 @@ export default function NewUser() {
           Create new user
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Add a new user to the system and assign them a role. For students, you
-          can optionally assign an exam.
+          Create admin or student users. For students, the default password is
+          their email id.
         </Typography>
       </Box>
 
@@ -167,29 +225,6 @@ export default function NewUser() {
       >
         <Box component="form" noValidate onSubmit={handleSubmit}>
           <Stack spacing={2.5}>
-            <TextField
-              label="Username"
-              fullWidth
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              error={Boolean(errors.username)}
-              helperText={errors.username || "Unique identifier for this user."}
-            />
-
-            <TextField
-              label="Password"
-              fullWidth
-              required
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              error={Boolean(errors.password)}
-              helperText={
-                errors.password || "Choose a secure password for the user."
-              }
-            />
-
             <FormControl fullWidth required error={Boolean(errors.role)}>
               <InputLabel id="role-label">Role</InputLabel>
               <Select
@@ -205,10 +240,87 @@ export default function NewUser() {
               </Select>
             </FormControl>
 
+            {!isStudent && (
+              <>
+                <TextField
+                  label="Username"
+                  fullWidth
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  error={Boolean(errors.username)}
+                  helperText={
+                    errors.username || "Unique identifier for this admin user."
+                  }
+                />
+
+                <TextField
+                  label="Password"
+                  fullWidth
+                  required
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  error={Boolean(errors.password)}
+                  helperText={
+                    errors.password || "Choose a secure password for the admin."
+                  }
+                />
+              </>
+            )}
+
             {isStudent && (
+              <>
+                <TextField
+                  label="Name"
+                  fullWidth
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  error={Boolean(errors.name)}
+                  helperText={errors.name}
+                />
+                <TextField
+                  label="Roll Number"
+                  fullWidth
+                  required
+                  value={rollNumber}
+                  onChange={(e) => setRollNumber(e.target.value)}
+                  error={Boolean(errors.rollNumber)}
+                  helperText={errors.rollNumber}
+                />
+                <TextField
+                  label="DOB"
+                  type="date"
+                  fullWidth
+                  required
+                  value={dob}
+                  onChange={(e) => setDob(e.target.value)}
+                  error={Boolean(errors.dob)}
+                  helperText={errors.dob}
+                  InputLabelProps={{ shrink: true }}
+                />
+                <TextField
+                  label="Email ID"
+                  fullWidth
+                  required
+                  value={emailId}
+                  onChange={(e) => setEmailId(e.target.value)}
+                  error={Boolean(errors.emailId)}
+                  helperText={errors.emailId || "This will be the default password."}
+                />
+                <TextField
+                  label="Phone Number"
+                  fullWidth
+                  required
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  error={Boolean(errors.phoneNumber)}
+                  helperText={errors.phoneNumber}
+                />
+
               <FormControl
                 fullWidth
-                required
                 error={Boolean(errors.assignedExamId)}
               >
                 <InputLabel id="assigned-exam-id-label">
@@ -220,13 +332,17 @@ export default function NewUser() {
                   value={assignedExamId}
                   onChange={(e) => setAssignedExamId(e.target.value)}
                 >
+                  <MenuItem value="">
+                    <em>None</em>
+                  </MenuItem>
                   {exams.map((exam) => (
-                    <MenuItem value={exam.id}>
+                    <MenuItem key={exam.id} value={exam.id}>
                       {exam.id}: {exam.title}
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
+              </>
             )}
 
             <Box

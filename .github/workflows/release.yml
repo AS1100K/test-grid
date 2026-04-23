@@ -12,7 +12,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 jobs:
@@ -55,3 +55,39 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             VITE_BACKEND_URL=
+
+      - name: Publish release notes
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          body: |
+            ## Container package
+
+            `ghcr.io/${{ github.repository }}:${{ github.ref_name }}`
+
+            This image is self-contained and includes:
+            - MySQL database
+            - Schema bootstrap from `docker/mysql/init.sql` (applied only on first DB initialization)
+            - Backend + frontend app
+            - Bundled/minified backend runtime in the final image
+
+            ## Run
+
+            ```bash
+            docker run -d \
+              --name test-grid \
+              -p 5000:5000 \
+              -v test-grid-data:/var/lib/mysql \
+              -e MYSQL_ROOT_PASSWORD=your-root-password \
+              -e MYSQL_DATABASE=test_grid \
+              -e MYSQL_USER=testgrid \
+              -e MYSQL_PASSWORD=your-db-password \
+              -e DB_USER=testgrid \
+              -e DB_PASSWORD=your-db-password \
+              -e DB_NAME=test_grid \
+              -e JWT_SECRET=your-jwt-secret \
+              ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ```
+
+            The container requires replacing placeholder secret values before startup.
+            For production guidance, see `README.md`.

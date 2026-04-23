@@ -35,7 +35,7 @@ ENV JWT_SECRET=change-me
 
 WORKDIR /app/backend
 
-COPY --from=node-runtime /usr/local/ /usr/local/
+COPY --from=node-runtime /usr/local/bin/node /usr/local/bin/node
 COPY --from=backend-deps /app/backend/node_modules ./node_modules
 COPY backend/ ./
 COPY --from=frontend-builder /app/frontend/dist ./public

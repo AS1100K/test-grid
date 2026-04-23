@@ -7,6 +7,7 @@ The published image includes:
 - Frontend static files served by the backend
 - MySQL server inside the same container
 - Automatic schema bootstrap from `docker/mysql/init.sql` on first database initialization only
+- Bundled/minified backend runtime (source files are not copied directly into the final image)
 
 ## Run container
 
@@ -32,5 +33,7 @@ Open the app at `http://localhost:5000`.
 
 - Always use a persistent volume for `/var/lib/mysql`.
 - Use strong secrets for `MYSQL_ROOT_PASSWORD`, `MYSQL_PASSWORD`, and `JWT_SECRET`.
+- Container startup will fail if placeholder secret values are left unchanged.
 - Expose only port `5000` unless direct DB access is required.
 - Back up the Docker volume regularly.
+- Full source extraction from a delivered container image cannot be made impossible; this setup only raises the effort required.

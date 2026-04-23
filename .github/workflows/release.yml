@@ -69,6 +69,7 @@ jobs:
             - MySQL database
             - Schema bootstrap from `docker/mysql/init.sql` (applied only on first DB initialization)
             - Backend + frontend app
+            - Bundled/minified backend runtime in the final image
 
             ## Run
 
@@ -88,4 +89,5 @@ jobs:
               ghcr.io/${{ github.repository }}:${{ github.ref_name }}
             ```
 
+            The container requires replacing placeholder secret values before startup.
             For production guidance, see `README.md`.

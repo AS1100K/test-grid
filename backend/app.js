@@ -1,4 +1,6 @@
 const express = require("express");
+const fs = require("fs");
+const path = require("path");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const cors = require("cors");
@@ -15,9 +17,17 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(fileUpload());
 
-// var path = require("path");
-// app.use(express.static(path.join(__dirname, "public")));
-
 app.use("/api", apiRouter);
+
+const frontendBuildPath = path.resolve("public");
+const frontendEntryPath = path.join(frontendBuildPath, "index.html");
+
+if (fs.existsSync(frontendEntryPath)) {
+  const frontendIndex = fs.readFileSync(frontendEntryPath, "utf8");
+  app.use(express.static(frontendBuildPath));
+  app.get(/^(?!\/api(?:\/|$)).*/, function serveSpaFallback(req, res) {
+    res.type("html").send(frontendIndex);
+  });
+}
 
 module.exports = app;

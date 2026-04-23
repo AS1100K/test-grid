@@ -22,8 +22,6 @@ require_runtime_secret JWT_SECRET
 mysql_ready() {
   mysqladmin ping \
     -h 127.0.0.1 \
-    -u"${DB_USER}" \
-    -p"${DB_PASSWORD}" \
     --silent >/dev/null 2>&1
 }
 
@@ -45,7 +43,7 @@ for _ in $(seq 1 "${MAX_MYSQL_WAIT_ITERATIONS}"); do
   if mysql_ready; then
     break
   fi
-  sleep 2
+  sleep 1
 done
 
 if ! mysql_ready; then

@@ -34,16 +34,12 @@ FROM node:24-bookworm-slim AS node-runtime
 FROM mysql:8.4 AS runtime
 
 ENV NODE_ENV=production
-ENV MYSQL_ROOT_PASSWORD=change-this-root-password
 ENV MYSQL_DATABASE=test_grid
 ENV MYSQL_USER=testgrid
-ENV MYSQL_PASSWORD=change-this-db-password
 ENV DB_HOST=127.0.0.1
 ENV DB_NAME=test_grid
 ENV DB_USER=testgrid
-ENV DB_PASSWORD=change-this-db-password
 ENV PORT=5000
-ENV JWT_SECRET=change-this-jwt-secret
 
 WORKDIR /app/backend
 

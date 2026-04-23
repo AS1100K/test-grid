@@ -64,6 +64,7 @@ CREATE TABLE users (
             phone_number IS NOT NULL
         )
     ),
+    -- NULL values are allowed for non-student users and do not conflict in UNIQUE constraints.
     UNIQUE (roll_number),
     UNIQUE (email_id)
 );

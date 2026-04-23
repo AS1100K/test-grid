@@ -5,6 +5,36 @@ const config = require("../../config");
 const { hasPermissions } = require("../../utils");
 
 const router = express.Router();
+const MAX_IMPORT_CHARS = 2_000_000;
+const MAX_IMPORT_ROWS = 2_000;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const RATE_LIMIT_MAX_REQUESTS = 120;
+const rateLimitStore = new Map();
+
+router.use((req, res, next) => {
+  const key = `${req.ip}:${req.path}`;
+  const now = Date.now();
+  const current = rateLimitStore.get(key);
+
+  if (!current || now > current.resetAt) {
+    rateLimitStore.set(key, {
+      count: 1,
+      resetAt: now + RATE_LIMIT_WINDOW_MS,
+    });
+    return next();
+  }
+
+  if (current.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return res.status(429).send({
+      status: 429,
+      success: false,
+      message: "Too many requests. Please try again later.",
+    });
+  }
+
+  current.count += 1;
+  return next();
+});
 
 function toCsvSafeValue(value) {
   if (value == null) {
@@ -45,10 +75,16 @@ function normalizeRole(value) {
 
 function normalizeExamId(value) {
   if (value == null || value === "") {
-    return null;
+    return {
+      valid: true,
+      value: null,
+    };
   }
   const num = Number(value);
-  return Number.isInteger(num) && num > 0 ? num : Number.NaN;
+  return {
+    valid: Number.isInteger(num) && num > 0,
+    value: Number.isInteger(num) && num > 0 ? num : null,
+  };
 }
 
 function normalizeDob(value) {
@@ -76,12 +112,21 @@ function canManageRole(actorRole, targetRole) {
 }
 
 function parseCsv(content) {
+  if (typeof content !== "string") {
+    return [];
+  }
+
+  if (content.length > MAX_IMPORT_CHARS) {
+    throw new Error("Import file is too large.");
+  }
+  const loopLimit = content.length;
+
   const rows = [];
   let row = [];
   let value = "";
   let inQuotes = false;
 
-  for (let i = 0; i < content.length; i++) {
+  for (let i = 0; i < loopLimit; i++) {
     const ch = content[i];
     const next = content[i + 1];
 
@@ -149,6 +194,29 @@ async function insertUser(conn, payload) {
   );
 }
 
+function getRecordValue(record, ...keys) {
+  for (const key of keys) {
+    if (record[key] != null && record[key] !== "") {
+      return record[key];
+    }
+  }
+  return null;
+}
+
+function getDuplicateFieldMessage(error) {
+  const msg = String(error?.sqlMessage || error?.message || "").toLowerCase();
+  if (msg.includes("username")) {
+    return "Duplicate username found.";
+  }
+  if (msg.includes("email_id") || msg.includes("email id")) {
+    return "Duplicate email id found.";
+  }
+  if (msg.includes("roll_number") || msg.includes("roll number")) {
+    return "Duplicate roll number found.";
+  }
+  return "Duplicate user data found in sheet.";
+}
+
 router.get("/", async function (req, res, _) {
   const permission = await hasPermissions(req.headers.authorization, [
     "super_admin",
@@ -205,7 +273,7 @@ router.post("/", async function (req, res, _) {
   if (role === "admin") {
     const username = normalizeString(req.body.username);
     const password = normalizeString(req.body.password);
-    const assigned_exam_id = normalizeExamId(req.body.assigned_exam_id);
+    const assignedExam = normalizeExamId(req.body.assigned_exam_id);
 
     if (username == null || password == null) {
       return res.status(400).send({
@@ -223,7 +291,7 @@ router.post("/", async function (req, res, _) {
       });
     }
 
-    if (assigned_exam_id !== null && !Number.isNaN(assigned_exam_id)) {
+    if (!assignedExam.valid || assignedExam.value !== null) {
       return res.status(400).send({
         status: 400,
         success: false,
@@ -248,7 +316,7 @@ router.post("/", async function (req, res, _) {
         username,
         password,
         role,
-        assigned_exam_id: null,
+        assigned_exam_id: assignedExam.value,
         name: null,
         roll_number: null,
         dob: null,
@@ -274,7 +342,7 @@ router.post("/", async function (req, res, _) {
   const dob = normalizeDob(req.body.dob);
   const email_id = normalizeString(req.body.email_id);
   const phone_number = normalizeString(req.body.phone_number);
-  const assigned_exam_id = normalizeExamId(req.body.assigned_exam_id);
+  const assignedExam = normalizeExamId(req.body.assigned_exam_id);
   const username = normalizeString(req.body.username) || email_id;
   const password = normalizeString(req.body.password) || email_id;
 
@@ -303,7 +371,7 @@ router.post("/", async function (req, res, _) {
     });
   }
 
-  if (assigned_exam_id !== null && Number.isNaN(assigned_exam_id)) {
+  if (!assignedExam.valid) {
     return res.status(400).send({
       status: 400,
       success: false,
@@ -329,7 +397,7 @@ router.post("/", async function (req, res, _) {
       username,
       password,
       role,
-      assigned_exam_id,
+      assigned_exam_id: assignedExam.value,
       name,
       roll_number,
       dob,
@@ -404,7 +472,7 @@ router.put("/:username", async function (req, res, _) {
     const studentFields = [
       ["name", normalizeString(req.body.name)],
       ["roll_number", normalizeString(req.body.roll_number)],
-      ["dob", req.body.dob == null ? null : normalizeDob(req.body.dob)],
+      ["dob", normalizeDob(req.body.dob)],
       ["email_id", normalizeString(req.body.email_id)],
       ["phone_number", normalizeString(req.body.phone_number)],
     ];
@@ -424,8 +492,8 @@ router.put("/:username", async function (req, res, _) {
     }
 
     if (Object.hasOwn(req.body, "assigned_exam_id")) {
-      const assigned_exam_id = normalizeExamId(req.body.assigned_exam_id);
-      if (assigned_exam_id !== null && Number.isNaN(assigned_exam_id)) {
+      const assignedExam = normalizeExamId(req.body.assigned_exam_id);
+      if (!assignedExam.valid) {
         return res.status(400).send({
           status: 400,
           success: false,
@@ -434,7 +502,7 @@ router.put("/:username", async function (req, res, _) {
         });
       }
       updates.push("assigned_exam_id=?");
-      params.push(assigned_exam_id);
+      params.push(assignedExam.value);
     }
   }
 
@@ -508,10 +576,10 @@ router.get("/export/students", async function (req, res, _) {
     rows,
   );
 
-  res.setHeader("Content-Type", "application/vnd.ms-excel; charset=utf-8");
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
   res.setHeader(
     "Content-Disposition",
-    'attachment; filename="students-list.xls"',
+    'attachment; filename="students-list.csv"',
   );
   return res.status(200).send(csv);
 });
@@ -545,6 +613,13 @@ router.post("/import/students", async function (req, res, _) {
 
   const header = rows[0].map((h) => h.trim().toLowerCase());
   const values = rows.slice(1);
+  if (values.length > MAX_IMPORT_ROWS) {
+    return res.status(400).send({
+      status: 400,
+      success: false,
+      message: `The import sheet supports up to ${MAX_IMPORT_ROWS} rows per upload.`,
+    });
+  }
   const toRecord = (line) => {
     const rec = {};
     for (let i = 0; i < header.length; i++) {
@@ -559,8 +634,11 @@ router.post("/import/students", async function (req, res, _) {
     for (const line of values) {
       const rec = toRecord(line);
       const role = normalizeRole(rec.role || "student");
-      if ((role !== "student" && role !== "admin") || !canManageRole(permission.data.role, role)) {
+      if (role !== "student" && role !== "admin") {
         throw new Error("Invalid role found in sheet.");
+      }
+      if (!canManageRole(permission.data.role, role)) {
+        throw new Error("You do not have permission to import this role.");
       }
 
       if (role === "admin") {
@@ -583,17 +661,21 @@ router.post("/import/students", async function (req, res, _) {
         continue;
       }
 
-      const email_id = normalizeString(rec["email id"] || rec.email_id);
+      const email_id = normalizeString(
+        getRecordValue(rec, "email id", "email_id"),
+      );
       const username = normalizeString(rec.username) || email_id;
       const password = normalizeString(rec.password) || email_id;
       const name = normalizeString(rec.name);
-      const roll_number = normalizeString(rec["roll number"] || rec.roll_number);
+      const roll_number = normalizeString(
+        getRecordValue(rec, "roll number", "roll_number"),
+      );
       const dob = normalizeDob(rec.dob);
       const phone_number = normalizeString(
-        rec["phone number"] || rec.phone_number,
+        getRecordValue(rec, "phone number", "phone_number"),
       );
-      const assigned_exam_id = normalizeExamId(
-        rec["assigned exam id"] || rec.assigned_exam_id,
+      const assignedExam = normalizeExamId(
+        getRecordValue(rec, "assigned exam id", "assigned_exam_id"),
       );
 
       if (
@@ -605,7 +687,7 @@ router.post("/import/students", async function (req, res, _) {
         username == null ||
         password == null ||
         username.includes(" ") ||
-        (assigned_exam_id !== null && Number.isNaN(assigned_exam_id))
+        !assignedExam.valid
       ) {
         throw new Error("Invalid student row in sheet.");
       }
@@ -614,7 +696,7 @@ router.post("/import/students", async function (req, res, _) {
         username,
         password,
         role: "student",
-        assigned_exam_id,
+        assigned_exam_id: assignedExam.value,
         name,
         roll_number,
         dob,
@@ -633,7 +715,7 @@ router.post("/import/students", async function (req, res, _) {
     return res.status(400).send({
       status: 400,
       success: false,
-      message: err.code === "ER_DUP_ENTRY" ? "Duplicate user data found in sheet." : err.message,
+      message: err.code === "ER_DUP_ENTRY" ? getDuplicateFieldMessage(err) : err.message,
     });
   } finally {
     conn.release();

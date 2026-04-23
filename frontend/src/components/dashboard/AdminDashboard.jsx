@@ -31,6 +31,7 @@ import useAuth from "../../contexts/useAuth";
 import useNotification from "../../contexts/useNotification";
 import fetch_ from "../../utils";
 
+const MANAGEABLE_ROLES = ["admin", "student"];
 const initialEditState = {
   username: "",
   role: "",
@@ -69,7 +70,9 @@ export default function AdminDashboard() {
 
   const visibleUsers = useMemo(
     () =>
-      users.filter((u) => (isSuperAdmin ? ["admin", "student"].includes(u.role) : u.role === "student")),
+      users.filter((u) =>
+        isSuperAdmin ? MANAGEABLE_ROLES.includes(u.role) : u.role === "student",
+      ),
     [users, isSuperAdmin],
   );
 
@@ -144,7 +147,7 @@ export default function AdminDashboard() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "students-list.xls";
+      a.download = "students-list.csv";
       document.body.appendChild(a);
       a.click();
       a.remove();

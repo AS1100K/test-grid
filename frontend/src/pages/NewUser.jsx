@@ -307,7 +307,10 @@ export default function NewUser() {
                   value={emailId}
                   onChange={(e) => setEmailId(e.target.value)}
                   error={Boolean(errors.emailId)}
-                  helperText={errors.emailId || "This will be the default password."}
+                  helperText={
+                    errors.emailId ||
+                    "This email id itself will be used as the default password."
+                  }
                 />
                 <TextField
                   label="Phone Number"

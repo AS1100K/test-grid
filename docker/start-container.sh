@@ -3,6 +3,7 @@ set -euo pipefail
 
 cd /app/backend
 
+# Wait up to 120 seconds for MySQL readiness.
 MAX_MYSQL_WAIT_ITERATIONS=120
 
 require_runtime_secret() {
@@ -51,7 +52,13 @@ if ! mysql_ready; then
   exit 1
 fi
 
-gosu mysql node ./create_default_user.js
+echo "Ensuring default admin user exists..."
+if ! gosu mysql node ./create_default_user.js; then
+  echo "Failed to run default user bootstrap."
+  exit 1
+fi
+
+echo "Starting application server..."
 gosu mysql node ./server.js &
 app_pid=$!
 

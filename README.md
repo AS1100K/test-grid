@@ -23,7 +23,7 @@ docker run -d \
   -e DB_USER=testgrid \
   -e DB_PASSWORD=your-db-password \
   -e DB_NAME=test_grid \
-  -e JWT_SECRET=change-this-secret \
+  -e JWT_SECRET=your-jwt-secret \
   ghcr.io/as1100k/test-grid:latest
 ```
 

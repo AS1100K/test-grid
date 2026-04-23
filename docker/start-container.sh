@@ -56,4 +56,12 @@ node ./server.js &
 app_pid=$!
 
 # Exit the container if either MySQL or the Node app exits.
+set +e
 wait -n "${mysql_pid}" "${app_pid}"
+exit_code=$?
+set -e
+
+term_handler
+wait "${mysql_pid}" "${app_pid}" 2>/dev/null || true
+
+exit "${exit_code}"

@@ -16,7 +16,6 @@ export default function StudentExam() {
   const [startTime, setStartTime] = useState(null);
   const [examInfo, setExamInfo] = useState(null);
   const [examError, setExamError] = useState(null);
-  const [submissionResult, setSubmissionResult] = useState(null);
 
   const [sections, setSections] = useState([]);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
@@ -54,7 +53,6 @@ export default function StudentExam() {
             setLoading={setLoading}
             setExamError={setExamError}
             setSections={setSections}
-            setSubmissionResult={setSubmissionResult}
           />
         );
       case "in_progress":
@@ -81,7 +79,6 @@ export default function StudentExam() {
               loading={loading}
               setLoading={setLoading}
               setExamStatus={setExamStatus}
-              setSubmissionResult={setSubmissionResult}
             />
 
             <ExamOverview
@@ -136,7 +133,6 @@ export default function StudentExam() {
         hasStarted={examStatus === "in_progress"}
         setExamStatus={setExamStatus}
         startTime={startTime}
-        setSubmissionResult={setSubmissionResult}
       />
 
       {renderExamContent()}

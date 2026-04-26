@@ -12,7 +12,6 @@ export default function ExamNavigation({
   hasStarted,
   setExamStatus,
   startTime,
-  setSubmissionResult,
 }) {
   const { token, user } = useAuth();
   const { addNotification } = useNotification();
@@ -84,10 +83,6 @@ export default function ExamNavigation({
         return;
       }
 
-      setSubmissionResult({
-        marks: res.data?.marks ?? 0,
-        percentage: res.data?.percentage ?? 0,
-      });
       setExamStatus("submitted");
     }
   }

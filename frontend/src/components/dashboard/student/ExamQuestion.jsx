@@ -131,6 +131,10 @@ export default function ExamQuestion({
   }
 
   async function handleNext() {
+    if (isNextDisabled) {
+      return;
+    }
+
     if (
       currentQuestionIndex === currentSection.questions.length - 1 &&
       currentSectionIndex < sections.length
@@ -288,7 +292,7 @@ export default function ExamQuestion({
                 loading={loading}
                 onClick={handleSaveNNext}
               >
-                Save & Next
+                {isNextDisabled ? "Save" : "Save & Next"}
               </Button>
               <Button
                 variant="outlined"

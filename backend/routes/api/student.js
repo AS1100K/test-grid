@@ -139,6 +139,8 @@ router.post("/start_exam", async function (req, res, _) {
         status: session_status,
         start_time: session_start_time,
         ...(result ? result : {}),
+        marks: null,
+        percentage: null,
       },
     });
   }
@@ -161,6 +163,8 @@ router.post("/start_exam", async function (req, res, _) {
             status: "submitted",
             start_time: session_start_time,
             ...result,
+            marks: null,
+            percentage: null,
           },
         });
       }
@@ -274,6 +278,8 @@ router.post("/save_response", async function (req, res, _) {
       data: {
         status: "submitted",
         ...autoSubmittedResult,
+        marks: null,
+        percentage: null,
       },
       message: "The exam is over and has been submitted automatically.",
     });
@@ -347,7 +353,7 @@ router.post("/submit", async function (req, res, _) {
     return res.status(200).send({
       status: 200,
       success: true,
-      data: result,
+      data: { ...result, marks: null, percentage: null },
     });
   } catch (err) {
     return res.status(400).send({

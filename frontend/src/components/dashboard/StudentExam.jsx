@@ -98,12 +98,6 @@ export default function StudentExam() {
               <Typography variant="h6" sx={{ mb: 1 }}>
                 Your exam has been submitted
               </Typography>
-              <Typography variant="body1">
-                Marks: {submissionResult?.marks ?? 0}
-              </Typography>
-              <Typography variant="body1">
-                Percentage: {submissionResult?.percentage ?? 0}%
-              </Typography>
             </Paper>
           </Container>
         );

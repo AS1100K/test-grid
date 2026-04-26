@@ -365,17 +365,27 @@ export default function AdminDashboard() {
                   }
                   fullWidth
                 />
-                <TextField
-                  label="Roll Number"
-                  value={editState.roll_number}
-                  onChange={(e) =>
-                    setEditState((prev) => ({
-                      ...prev,
-                      roll_number: e.target.value,
-                    }))
-                  }
-                  fullWidth
-                />
+                <Box>
+                  <TextField
+                    label="Roll Number"
+                    value={editState.roll_number}
+                    onChange={(e) =>
+                      setEditState((prev) => ({
+                        ...prev,
+                        roll_number: e.target.value,
+                      }))
+                    }
+                    fullWidth
+                  />
+                  <Typography
+                    variant="body2"
+                    color="textSecondary"
+                    sx={{ ml: 2, mt: 1 }}
+                  >
+                    Changing Roll Number doesn't change the username of the
+                    student.
+                  </Typography>
+                </Box>
                 <TextField
                   label="DOB"
                   type="date"

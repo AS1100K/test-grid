@@ -83,7 +83,7 @@ function Login() {
               <TextField
                 fullWidth
                 variant="outlined"
-                label="Username"
+                label="Username / Roll Number"
                 margin="normal"
                 required
                 type="text"
@@ -101,6 +101,10 @@ function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
+
+              <Typography variant="body2" color="textSecondary">
+                The default password is: yyyy-mm-dd
+              </Typography>
 
               <Button
                 type="submit"

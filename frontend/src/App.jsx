@@ -9,14 +9,15 @@ import NavBar from "./components/NavBar.jsx";
 import Exams from "./pages/Exams.jsx";
 import NewUser from "./pages/NewUser.jsx";
 import SubmissionOverview from "./pages/SubmissionOverview.jsx";
+import AdminDashboard from "./components/dashboard/AdminDashboard.jsx";
 
 function App() {
   return (
     <NotificationProvider>
       <ToastNotification />
       <AuthProvider>
-        <NavBar />
         <BrowserRouter>
+          <NavBar />
           <Routes>
             <Route
               path="/login"
@@ -31,6 +32,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute allowedRoles={["super_admin"]}>
+                  <AdminDashboard />
                 </ProtectedRoute>
               }
             />

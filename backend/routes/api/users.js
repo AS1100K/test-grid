@@ -6,34 +6,6 @@ const { hasPermissions } = require("../../utils");
 const { default: OfficeParser } = require("officeparser");
 
 const router = express.Router();
-const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const RATE_LIMIT_MAX_REQUESTS = 120;
-const rateLimitStore = new Map();
-
-router.use((req, res, next) => {
-  const key = `${req.ip}:${req.path}`;
-  const now = Date.now();
-  const current = rateLimitStore.get(key);
-
-  if (!current || now > current.resetAt) {
-    rateLimitStore.set(key, {
-      count: 1,
-      resetAt: now + RATE_LIMIT_WINDOW_MS,
-    });
-    return next();
-  }
-
-  if (current.count >= RATE_LIMIT_MAX_REQUESTS) {
-    return res.status(429).send({
-      status: 429,
-      success: false,
-      message: "Too many requests. Please try again later.",
-    });
-  }
-
-  current.count += 1;
-  return next();
-});
 
 function toCsvSafeValue(value) {
   if (value == null) {
@@ -287,8 +259,8 @@ router.post("/", async function (req, res, _) {
   }
 
   if (!canManageRole(permission.data.role, role)) {
-    return res.status(401).send({
-      status: 401,
+    return res.status(403).send({
+      status: 403,
       success: false,
       message:
         "Unauthorised user creation request. The user can only be student.",

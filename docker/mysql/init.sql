@@ -46,7 +46,7 @@ CREATE TABLE questions (
 CREATE TABLE users (
     username VARCHAR(50) PRIMARY KEY,
     password_hash VARCHAR(255) NOT NULL,
-    role ENUM('super_admin', 'admin', 'student'),
+    role ENUM('super_admin', 'admin', 'student') NOT NULL,
     assigned_exam_id INT,
     name VARCHAR(255),
     roll_number VARCHAR(100),

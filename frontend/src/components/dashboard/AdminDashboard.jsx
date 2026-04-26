@@ -358,6 +358,11 @@ export default function AdminDashboard() {
             Download .xlsx template
           </Button>
 
+          <Typography variant="body2" color="textSecondary">
+            The default password if not specified for the student is their DOB
+            in `yyyy-mm-dd` format.
+          </Typography>
+
           <Box
             component="form"
             noValidate

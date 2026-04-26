@@ -24,6 +24,7 @@ import {
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import DownloadIcon from "@mui/icons-material/Download";
 import EditIcon from "@mui/icons-material/Edit";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import AddIcon from "@mui/icons-material/Add";
 import { useNavigate } from "react-router";
 import useAuth from "../../contexts/useAuth";
@@ -54,7 +55,9 @@ export default function AdminDashboard() {
   const { token, user } = useAuth();
   const { addNotification } = useNotification();
   const navigate = useNavigate();
+
   const uploadRef = useRef(null);
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
 
   const [users, setUsers] = useState([]);
   const [exams, setExams] = useState([]);
@@ -268,18 +271,10 @@ export default function AdminDashboard() {
           <Button
             variant="outlined"
             startIcon={<CloudUploadIcon />}
-            disabled={importing}
-            onClick={() => uploadRef.current?.click()}
+            onClick={() => setBulkImportOpen(true)}
           >
-            {importing ? "Importing..." : "Bulk Import"}
+            Bulk Import
           </Button>
-          <input
-            ref={uploadRef}
-            hidden
-            type="file"
-            accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel"
-            onChange={handleImport}
-          />
         </Stack>
 
         <Paper sx={{ borderRadius: 3, overflow: "hidden" }}>
@@ -338,6 +333,71 @@ export default function AdminDashboard() {
           )}
         </Paper>
       </Stack>
+
+      <Dialog
+        open={bulkImportOpen}
+        onClose={() => setBulkImportOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Bulk Import Students</DialogTitle>
+        <DialogContent>
+          <Button
+            component="a"
+            target="_blank"
+            href="/student_list.xlsx"
+            variant="outlined"
+            startIcon={<FileDownloadIcon />}
+            sx={{
+              textTransform: "none",
+              borderRadius: 999,
+              alignSelf: { xs: "stretch", sm: "flex-start" },
+              mb: 2,
+            }}
+          >
+            Download .xlsx template
+          </Button>
+
+          <Box
+            component="form"
+            noValidate
+            sx={{
+              borderRadius: 2,
+              border: "1px dashed",
+              p: 3,
+              textAlign: "center",
+            }}
+          >
+            <Stack spacing={2} sx={{ alignItems: "center" }}>
+              <CloudUploadIcon color="primary" sx={{ fontSize: 40 }} />
+              <Typography variant="subtitle1">
+                Choose a .xlsx file to upload
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Drag and drop is not enabled yet. Use the button below to select
+                a file from your computer.
+              </Typography>
+
+              <Button
+                variant="outlined"
+                startIcon={<CloudUploadIcon />}
+                disabled={importing}
+                onClick={() => uploadRef.current?.click()}
+              >
+                {importing ? "Importing..." : "Bulk Import"}
+              </Button>
+
+              <input
+                ref={uploadRef}
+                hidden
+                type="file"
+                accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel"
+                onChange={handleImport}
+              />
+            </Stack>
+          </Box>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={editOpen}

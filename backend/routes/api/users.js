@@ -115,12 +115,13 @@ function normalizeDob(value) {
       return null;
     }
 
-    const date = new Date(year, month - 1, day);
+    // Use Date.UTC to prevent local timezone offsets from shifting the date when calling toISOString()
+    const date = new Date(Date.UTC(year, month - 1, day));
 
     if (
-      date.getFullYear() === year &&
-      date.getMonth() === month - 1 &&
-      date.getDate() === day
+      date.getUTCFullYear() === year &&
+      date.getUTCMonth() === month - 1 &&
+      date.getUTCDate() === day
     ) {
       return date.toISOString().slice(0, 10);
     } else {
@@ -713,5 +714,5 @@ router.post("/import/students", async function (req, res, _) {
 });
 
 module.exports = router;
-// module.exports.parseCsv = parseCsv;
+module.exports.parseUsersList = parseUsersList;
 module.exports.normalizeDob = normalizeDob;

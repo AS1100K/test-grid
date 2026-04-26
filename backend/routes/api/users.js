@@ -141,8 +141,10 @@ function parseUserCell(kind, value) {
 async function parseUsersList(content) {
   const ast = await OfficeParser.parseOffice(content);
 
-  if (ast.type !== "xlsx") {
-    throw new Error("The bulk users list must be in a `.xlsx` file only.");
+  if (!["xlsx", "xls"].includes(ast.type)) {
+    throw new Error(
+      "The bulk users list must be in a `.xlsx` or `.xls` file only.",
+    );
   }
 
   if (ast.content.length !== 1) {

@@ -396,7 +396,7 @@ export default function AdminDashboard() {
                 ref={uploadRef}
                 hidden
                 type="file"
-                accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel"
+                accept=".xlsx,application/vnd.ms-excel"
                 onChange={handleImport}
               />
             </Stack>

@@ -1,6 +1,7 @@
 import StudentExam from "../components/dashboard/StudentExam";
 import AdminDashboard from "../components/dashboard/AdminDashboard";
 import useAuth from "../contexts/useAuth";
+import SuperAdmin from "../components/dashboard/SuperAdmin";
 
 function Dashboard() {
   const { user } = useAuth();
@@ -11,6 +12,7 @@ function Dashboard() {
 
   switch (user.role) {
     case "super_admin":
+      return <SuperAdmin />;
     case "admin":
       return <AdminDashboard />;
     default:

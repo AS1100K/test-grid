@@ -25,7 +25,6 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import DownloadIcon from "@mui/icons-material/Download";
 import EditIcon from "@mui/icons-material/Edit";
 import AddIcon from "@mui/icons-material/Add";
-import QuizIcon from "@mui/icons-material/Quiz";
 import { useNavigate } from "react-router";
 import useAuth from "../../contexts/useAuth";
 import useNotification from "../../contexts/useNotification";
@@ -202,7 +201,9 @@ export default function AdminDashboard() {
         payload.email_id = editState.email_id.trim();
         payload.phone_number = editState.phone_number.trim();
         payload.assigned_exam_id =
-          editState.assigned_exam_id === "" ? null : Number(editState.assigned_exam_id);
+          editState.assigned_exam_id === ""
+            ? null
+            : Number(editState.assigned_exam_id);
       }
       if (editState.password.trim()) {
         payload.password = editState.password.trim();
@@ -249,11 +250,19 @@ export default function AdminDashboard() {
           </Typography>
         </Box>
 
-        <Stack direction="row" spacing={1.5} flexWrap="wrap">
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate("/new-user")}>
+        <Stack direction="row" spacing={1.5}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate("/new-user")}
+          >
             Create User
           </Button>
-          <Button variant="outlined" startIcon={<DownloadIcon />} onClick={handleExport}>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={handleExport}
+          >
             Export Students
           </Button>
           <Button
@@ -264,11 +273,6 @@ export default function AdminDashboard() {
           >
             {importing ? "Importing..." : "Bulk Import"}
           </Button>
-          {isSuperAdmin && (
-            <Button variant="outlined" startIcon={<QuizIcon />} onClick={() => navigate("/exams")}>
-              Manage Exams
-            </Button>
-          )}
           <input
             ref={uploadRef}
             hidden
@@ -312,7 +316,11 @@ export default function AdminDashboard() {
                     <TableCell>{normalizeDob(row.dob) || "-"}</TableCell>
                     <TableCell>{row.assigned_exam_id ?? "-"}</TableCell>
                     <TableCell align="right">
-                      <Button size="small" startIcon={<EditIcon />} onClick={() => openEdit(row)}>
+                      <Button
+                        size="small"
+                        startIcon={<EditIcon />}
+                        onClick={() => openEdit(row)}
+                      >
                         Edit
                       </Button>
                     </TableCell>
@@ -331,48 +339,79 @@ export default function AdminDashboard() {
         </Paper>
       </Stack>
 
-      <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Edit User</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField label="Username" value={editState.username} disabled fullWidth />
+            <TextField
+              label="Username"
+              value={editState.username}
+              disabled
+              fullWidth
+            />
             <TextField label="Role" value={editState.role} disabled fullWidth />
             {editState.role === "student" && (
               <>
                 <TextField
                   label="Name"
                   value={editState.name}
-                  onChange={(e) => setEditState((prev) => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) =>
+                    setEditState((prev) => ({ ...prev, name: e.target.value }))
+                  }
                   fullWidth
                 />
                 <TextField
                   label="Roll Number"
                   value={editState.roll_number}
-                  onChange={(e) => setEditState((prev) => ({ ...prev, roll_number: e.target.value }))}
+                  onChange={(e) =>
+                    setEditState((prev) => ({
+                      ...prev,
+                      roll_number: e.target.value,
+                    }))
+                  }
                   fullWidth
                 />
                 <TextField
                   label="DOB"
                   type="date"
                   value={editState.dob}
-                  onChange={(e) => setEditState((prev) => ({ ...prev, dob: e.target.value }))}
+                  onChange={(e) =>
+                    setEditState((prev) => ({ ...prev, dob: e.target.value }))
+                  }
                   InputLabelProps={{ shrink: true }}
                   fullWidth
                 />
                 <TextField
                   label="Email ID"
                   value={editState.email_id}
-                  onChange={(e) => setEditState((prev) => ({ ...prev, email_id: e.target.value }))}
+                  onChange={(e) =>
+                    setEditState((prev) => ({
+                      ...prev,
+                      email_id: e.target.value,
+                    }))
+                  }
                   fullWidth
                 />
                 <TextField
                   label="Phone Number"
                   value={editState.phone_number}
-                  onChange={(e) => setEditState((prev) => ({ ...prev, phone_number: e.target.value }))}
+                  onChange={(e) =>
+                    setEditState((prev) => ({
+                      ...prev,
+                      phone_number: e.target.value,
+                    }))
+                  }
                   fullWidth
                 />
                 <FormControl fullWidth>
-                  <InputLabel id="edit-assigned-exam-label">Assigned Exam</InputLabel>
+                  <InputLabel id="edit-assigned-exam-label">
+                    Assigned Exam
+                  </InputLabel>
                   <Select
                     labelId="edit-assigned-exam-label"
                     label="Assigned Exam"
@@ -400,7 +439,9 @@ export default function AdminDashboard() {
               label="New Password (optional)"
               type="password"
               value={editState.password}
-              onChange={(e) => setEditState((prev) => ({ ...prev, password: e.target.value }))}
+              onChange={(e) =>
+                setEditState((prev) => ({ ...prev, password: e.target.value }))
+              }
               fullWidth
             />
           </Stack>

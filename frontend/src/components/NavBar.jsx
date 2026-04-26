@@ -6,11 +6,16 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
+import PersonIcon from "@mui/icons-material/Person";
+import QuizIcon from "@mui/icons-material/Quiz";
 import useAuth from "../contexts/useAuth";
+import { useLocation } from "react-router";
 
 export default function NavBar() {
   const { token, user, logout } = useAuth();
+  const location = useLocation();
+
+  const showExam = ["/users", "/new-user"].includes(location.pathname);
 
   if (!token) {
     return <></>;
@@ -74,10 +79,10 @@ export default function NavBar() {
                 gap: "20px",
               }}
             >
-              {["super_admin", "admin"].includes(user?.role) && (
+              {user?.role === "super_admin" && (
                 <Button
                   variant="outlined"
-                  href="/new-user"
+                  href={showExam ? "/" : "/users"}
                   sx={{
                     borderRadius: 999,
                     textTransform: "none",
@@ -90,10 +95,20 @@ export default function NavBar() {
                       borderColor: "rgb(248, 250, 252)",
                       backgroundColor: "rgba(148, 163, 184, 0.2)",
                     },
+                    gap: 1,
                   }}
                 >
-                  <AddIcon />
-                  New User
+                  {showExam ? (
+                    <>
+                      <QuizIcon />
+                      Exams
+                    </>
+                  ) : (
+                    <>
+                      <PersonIcon />
+                      Users
+                    </>
+                  )}
                 </Button>
               )}
 

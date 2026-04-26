@@ -65,8 +65,7 @@ CREATE TABLE users (
         )
     ),
     -- NULL values are allowed for non-student users and do not conflict in UNIQUE constraints.
-    UNIQUE (roll_number),
-    UNIQUE (email_id)
+    UNIQUE (roll_number)
 );
 
 CREATE TABLE test_sessions (

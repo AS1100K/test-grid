@@ -3,10 +3,9 @@ const bcrypt = require("bcrypt");
 const pool = require("../../services/db");
 const config = require("../../config");
 const { hasPermissions } = require("../../utils");
+const { default: OfficeParser } = require("officeparser");
 
 const router = express.Router();
-const MAX_IMPORT_CHARS = 2_000_000;
-const MAX_IMPORT_ROWS = 2_000;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 120;
 const rateLimitStore = new Map();
@@ -93,8 +92,40 @@ function normalizeDob(value) {
     return null;
   }
 
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
-    return dob;
+  // Attempt to parse Excel serial dates (e.g., "38972.0")
+  if (/^\d+(\.\d+)?$/.test(dob)) {
+    const excelDate = parseFloat(dob);
+    // Excel base date is December 30, 1899
+    const date = new Date(Math.round((excelDate - 25569) * 86400 * 1000));
+    if (!Number.isNaN(date.getTime())) {
+      return date.toISOString().slice(0, 10);
+    }
+  }
+
+  // Attempt to parse as DD-MM-YYYY (or DD/MM/YYYY, DD MM YYYY)
+  // This order takes precedence to explicitly handle DD-MM-YYYY formats,
+  // preventing potential ambiguity with general Date parsing which can be locale-dependent.
+  const dd_mm_yyyy_match = dob.match(/^(\d{1,2})[/\- ](\d{1,2})[/\- ](\d{4})$/);
+  if (dd_mm_yyyy_match) {
+    const day = parseInt(dd_mm_yyyy_match[1], 10);
+    const month = parseInt(dd_mm_yyyy_match[2], 10); // 1-indexed month
+    const year = parseInt(dd_mm_yyyy_match[3], 10);
+
+    if (day < 1 || day > 31 || month < 1 || month > 12) {
+      return null;
+    }
+
+    const date = new Date(year, month - 1, day);
+
+    if (
+      date.getFullYear() === year &&
+      date.getMonth() === month - 1 &&
+      date.getDate() === day
+    ) {
+      return date.toISOString().slice(0, 10);
+    } else {
+      return null;
+    }
   }
 
   const date = new Date(dob);
@@ -111,69 +142,85 @@ function canManageRole(actorRole, targetRole) {
   return actorRole === "admin" && targetRole === "student";
 }
 
-function parseCsv(content) {
-  if (typeof content !== "string") {
-    return [];
-  }
-
-  if (content.length > MAX_IMPORT_CHARS) {
-    throw new Error("Import file is too large.");
-  }
-  const loopLimit = content.length;
-
-  const rows = [];
-  let row = [];
-  let value = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < loopLimit; i++) {
-    const ch = content[i];
-    const next = content[i + 1];
-
-    if (inQuotes) {
-      if (ch === '"' && next === '"') {
-        value += '"';
-        i++;
-      } else if (ch === '"') {
-        inQuotes = false;
-      } else {
-        value += ch;
+function parseUserCell(kind, value) {
+  switch (kind) {
+    case "username":
+    case "name":
+    case "email_id":
+    case "phone_number":
+      return normalizeString(value);
+    case "roll_number":
+    case "assigned_exam_id": {
+      const integer = Number(value);
+      if (Number.isNaN(integer) || !Number.isInteger(integer) || integer < 0) {
+        throw new Error("Invalid " + kind);
       }
-      continue;
-    }
 
-    if (ch === '"') {
-      inQuotes = true;
-      continue;
+      return integer;
     }
+    case "dob":
+      return normalizeDob(value);
+    default:
+      throw new Error("Invalid Cell kind.");
+  }
+}
 
-    if (ch === ",") {
-      row.push(value.trim());
-      value = "";
-      continue;
-    }
+async function parseUsersList(content) {
+  const ast = await OfficeParser.parseOffice(content);
 
-    if (ch === "\n" || ch === "\r") {
-      if (ch === "\r" && next === "\n") {
-        i++;
-      }
-      row.push(value.trim());
-      value = "";
-      if (row.some((cell) => cell !== "")) {
-        rows.push(row);
-      }
-      row = [];
-      continue;
-    }
-
-    value += ch;
+  if (ast.type !== "xlsx") {
+    throw new Error("The bulk users list must be in a `.xlsx` file only.");
   }
 
-  row.push(value.trim());
-  if (row.some((cell) => cell !== "")) {
-    rows.push(row);
+  if (ast.content.length !== 1) {
+    throw new Error("There must be only one sheet in the Excel file.");
   }
-  return rows;
+
+  const sheet = ast.content[0];
+
+  if (sheet.children.length < 2) {
+    throw new Error("No data found. There must be at least one row.");
+  }
+
+  const users = [];
+  const headerMap = {};
+
+  for (const headerCell of sheet.children[0].children) {
+    const header = headerCell.text.toLowerCase().replaceAll(" ", "_");
+
+    if (
+      [
+        "username",
+        "name",
+        "roll_number",
+        "email_id",
+        "phone_number",
+        "dob",
+        "assigned_exam_id",
+      ].includes(header)
+    ) {
+      headerMap[headerCell.metadata.col] = header;
+    }
+  }
+
+  for (const row of sheet.children.slice(1)) {
+    const entry = {};
+
+    for (const cell of row.children) {
+      if (headerMap[cell.metadata.col]) {
+        entry[headerMap[cell.metadata.col]] = parseUserCell(
+          headerMap[cell.metadata.col],
+          cell.text,
+        );
+      }
+    }
+
+    if (Object.keys(entry).length > 0) {
+      users.push(entry);
+    }
+  }
+
+  return users;
 }
 
 async function insertUser(conn, payload) {
@@ -192,29 +239,6 @@ async function insertUser(conn, payload) {
       payload.phone_number,
     ],
   );
-}
-
-function getRecordValue(record, ...keys) {
-  for (const key of keys) {
-    if (record[key] != null && record[key] !== "") {
-      return record[key];
-    }
-  }
-  return null;
-}
-
-function getDuplicateFieldMessage(error) {
-  const msg = String(error?.sqlMessage || error?.message || "").toLowerCase();
-  if (msg.includes("username")) {
-    return "Duplicate username found.";
-  }
-  if (msg.includes("email_id") || msg.includes("email id")) {
-    return "Duplicate email id found.";
-  }
-  if (msg.includes("roll_number") || msg.includes("roll number")) {
-    return "Duplicate roll number found.";
-  }
-  return "Duplicate user data found in sheet.";
 }
 
 router.get("/", async function (req, res, _) {
@@ -530,7 +554,10 @@ router.put("/:username", async function (req, res, _) {
 
   params.push(username);
   try {
-    await pool.query(`UPDATE users SET ${updates.join(", ")} WHERE username=?`, params);
+    await pool.query(
+      `UPDATE users SET ${updates.join(", ")} WHERE username=?`,
+      params,
+    );
     return res.status(200).send({
       status: 200,
       success: true,
@@ -601,102 +628,64 @@ router.post("/import/students", async function (req, res, _) {
     });
   }
 
-  const csvRaw = req.files.users_sheet.data.toString("utf-8");
-  const rows = parseCsv(csvRaw);
-  if (rows.length < 2) {
-    return res.status(400).send({
-      status: 400,
+  let users = [];
+  try {
+    users = await parseUsersList(req.files.users_sheet.data);
+  } catch (err) {
+    return res.status(500).send({
+      status: 500,
       success: false,
-      message: "The import sheet must contain at least one data row.",
+      message: "Failed to parse Excel File: " + err.message,
     });
   }
-
-  const header = rows[0].map((h) => h.trim().toLowerCase());
-  const values = rows.slice(1);
-  if (values.length > MAX_IMPORT_ROWS) {
-    return res.status(400).send({
-      status: 400,
-      success: false,
-      message: `The import sheet supports up to ${MAX_IMPORT_ROWS} rows per upload.`,
-    });
-  }
-  const toRecord = (line) => {
-    const rec = {};
-    for (let i = 0; i < header.length; i++) {
-      rec[header[i]] = line[i] ?? "";
-    }
-    return rec;
-  };
 
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
-    for (const line of values) {
-      const rec = toRecord(line);
-      const role = normalizeRole(rec.role || "student");
-      if (role !== "student" && role !== "admin") {
-        throw new Error("Invalid role found in sheet.");
-      }
-      if (!canManageRole(permission.data.role, role)) {
-        throw new Error("You do not have permission to import this role.");
+
+    for (const user of users) {
+      const roll_number = user.roll_number;
+      if (typeof roll_number !== "number") {
+        throw new Error("Invalid Roll Number");
       }
 
-      if (role === "admin") {
-        const username = normalizeString(rec.username);
-        const password = normalizeString(rec.password) || username;
-        if (username == null || password == null || username.includes(" ")) {
-          throw new Error("Invalid admin row in sheet.");
-        }
-        await insertUser(conn, {
-          username,
-          password,
-          role: "admin",
-          assigned_exam_id: null,
-          name: null,
-          roll_number: null,
-          dob: null,
-          email_id: null,
-          phone_number: null,
-        });
-        continue;
+      const name = user.name;
+      if (!name) {
+        throw new Error("Invalid Student name");
       }
 
-      const email_id = normalizeString(
-        getRecordValue(rec, "email id", "email_id"),
-      );
-      const username = normalizeString(rec.username) || email_id;
-      const password = normalizeString(rec.password) || email_id;
-      const name = normalizeString(rec.name);
-      const roll_number = normalizeString(
-        getRecordValue(rec, "roll number", "roll_number"),
-      );
-      const dob = normalizeDob(rec.dob);
-      const phone_number = normalizeString(
-        getRecordValue(rec, "phone number", "phone_number"),
-      );
-      const assignedExam = normalizeExamId(
-        getRecordValue(rec, "assigned exam id", "assigned_exam_id"),
-      );
+      const email_id = user.email_id;
+      if (email_id === "") {
+        throw new Error("Invalid Student Email ID");
+      }
 
+      const phone_number = user.phone_number;
       if (
-        name == null ||
-        roll_number == null ||
-        dob == null ||
-        email_id == null ||
-        phone_number == null ||
-        username == null ||
-        password == null ||
-        username.includes(" ") ||
-        !assignedExam.valid
+        phone_number === "" ||
+        phone_number.length < 10 ||
+        phone_number.length > 20
       ) {
-        throw new Error("Invalid student row in sheet.");
+        throw new Error("Invalid Phone Number");
       }
+
+      const dob = user.dob;
+      if (!dob) {
+        throw new Error("Invalid Student DOB.");
+      }
+
+      const assigned_exam_id = user.assigned_exam_id;
+      if (typeof assigned_exam_id !== "number") {
+        throw new Error("Invalid Assigned Exam ID");
+      }
+
+      const username = user.username || roll_number;
+      const password = user.password || dob;
 
       await insertUser(conn, {
         username,
         password,
         role: "student",
-        assigned_exam_id: assignedExam.value,
+        assigned_exam_id,
         name,
         roll_number,
         dob,
@@ -706,16 +695,17 @@ router.post("/import/students", async function (req, res, _) {
     }
 
     await conn.commit();
+
     return res.status(201).send({
       status: 201,
       success: true,
     });
   } catch (err) {
     await conn.rollback();
-    return res.status(400).send({
-      status: 400,
+    return res.status(500).send({
+      status: 500,
       success: false,
-      message: err.code === "ER_DUP_ENTRY" ? getDuplicateFieldMessage(err) : err.message,
+      message: err.message,
     });
   } finally {
     conn.release();
@@ -723,5 +713,5 @@ router.post("/import/students", async function (req, res, _) {
 });
 
 module.exports = router;
-module.exports.parseCsv = parseCsv;
+// module.exports.parseCsv = parseCsv;
 module.exports.normalizeDob = normalizeDob;

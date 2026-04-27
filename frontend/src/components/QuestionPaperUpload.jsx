@@ -18,6 +18,61 @@ export default function QuestionPaperUpload({
 
   const [uploading, setUploading] = useState(false);
 
+  const templateText = `SECTION: <SECTION_NAME>
+INSTRUCTIONS: <INSTRUCTIONS_HERE OR EMPTY>
+
+Q1. <QUESTION_TEXT>
+
+A. <OPTION_A_TEXT>
+
+B. <OPTION_B_TEXT>
+
+C. <OPTION_C_TEXT>
+
+D. <OPTION_D_TEXT>
+
+ANSWER: <A | B | C | D>
+
+MARKS: <INTEGER>
+`;
+
+  const handleCopyTemplate = async () => {
+    try {
+      await navigator.clipboard.writeText(templateText);
+      addNotification({
+        type: "info",
+        message: "Template copied to clipboard.",
+      });
+    } catch (err) {
+      addNotification({
+        type: "error",
+        message: "Failed to copy template to clipboard: " + err.message,
+      });
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    try {
+      const blob = new Blob([templateText], {
+        type: "text/plain;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "question_paper_template.txt";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      addNotification({ type: "info", message: "Template downloaded." });
+    } catch (err) {
+      addNotification({
+        type: "error",
+        message: "Failed to download template: " + err.message,
+      });
+    }
+  };
+
   const handleFileChange = (event) => {
     const selected = event.target.files?.[0];
     if (!selected) return;
@@ -81,10 +136,6 @@ export default function QuestionPaperUpload({
     }
   };
 
-  const handleDownloadTemplate = () => {
-    window.alert("TODO: To be implemented.");
-  };
-
   return (
     <Paper
       elevation={1}
@@ -104,7 +155,7 @@ export default function QuestionPaperUpload({
           </Typography>
         </Box>
 
-        {/* Instructions placeholder (to be filled in later) */}
+        {/* Formatting instructions and template */}
         <Box
           sx={{
             borderRadius: 2,
@@ -114,46 +165,99 @@ export default function QuestionPaperUpload({
             backgroundColor: "background.default",
           }}
         >
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
-            Formatting instructions
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Instructions about how to format the question paper will go here.
-            You can include examples, required styles, and supported question
-            types later.
-          </Typography>
+          <Stack spacing={1}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+              Formatting instructions
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              The parser expects exact tokens and structure. Please follow these
+              rules exactly:
+            </Typography>
+            <Typography variant="body2" component="div" color="text.secondary">
+              <ul style={{ margin: "8px 0 0 18px", padding: 0 }}>
+                <li>
+                  <strong>SECTION:</strong> Line must start with{" "}
+                  <code>SECTION:</code> followed by the section name (cannot be
+                  empty).
+                </li>
+                <li>
+                  <strong>INSTRUCTIONS:</strong> Line must start with{" "}
+                  <code>INSTRUCTIONS:</code>. It may be empty but the token and
+                  colon must be present on the same line.
+                </li>
+                <li>
+                  <strong>Questions</strong> must start with{" "}
+                  <code>Q&lt;number&gt;.</code> (example: <code>Q1.</code>),
+                  followed by the question text on the same line.
+                </li>
+                <li>
+                  <strong>Options</strong> must be exactly four lines starting
+                  with <code>A.</code>, <code>B.</code>, <code>C.</code>,{" "}
+                  <code>D.</code> (uppercase letter, dot, then space).
+                </li>
+                <li>
+                  <strong>ANSWER:</strong> Line must be{" "}
+                  <code>ANSWER: &lt;A|B|C|D&gt;</code> (single letter, no dot).
+                </li>
+                <li>
+                  <strong>MARKS:</strong> Line must be{" "}
+                  <code>MARKS: &lt;integer&gt;</code> (a whole number).
+                </li>
+              </ul>
+            </Typography>
+
+            <Box
+              component="pre"
+              sx={{
+                whiteSpace: "pre-wrap",
+                fontSize: 13,
+                backgroundColor: "background.paper",
+                p: 1,
+                borderRadius: 1,
+                overflow: "auto",
+              }}
+            >
+              {`SECTION: Physics - Multiple Choice
+INSTRUCTIONS: Answer all questions. Use the given marks.
+
+Q1. What is the SI unit of force?
+
+A. Joule
+
+B. Newton
+
+C. Pascal
+
+D. Watt
+
+ANSWER: B
+
+MARKS: 2
+`}
+            </Box>
+
+            <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={handleCopyTemplate}
+                startIcon={<FileDownloadIcon />}
+                sx={{ textTransform: "none" }}
+              >
+                Copy template
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={handleDownloadTemplate}
+                startIcon={<FileDownloadIcon />}
+                sx={{ textTransform: "none" }}
+              >
+                Download template (.txt)
+              </Button>
+            </Stack>
+          </Stack>
         </Box>
-
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={2}
-          sx={{
-            alignItems: { xs: "stretch", sm: "center" },
-            justifyContent: "space-between",
-          }}
-        >
-          <Button
-            type="button"
-            variant="outlined"
-            startIcon={<FileDownloadIcon />}
-            onClick={handleDownloadTemplate}
-            sx={{
-              textTransform: "none",
-              borderRadius: 999,
-              alignSelf: { xs: "stretch", sm: "flex-start" },
-            }}
-          >
-            Download .docx template
-          </Button>
-
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ textAlign: { xs: "left", sm: "right" } }}
-          >
-            Accepted format: <strong>.docx</strong>
-          </Typography>
-        </Stack>
 
         <Box
           component="form"

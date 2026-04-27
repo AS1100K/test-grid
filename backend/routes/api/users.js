@@ -342,8 +342,8 @@ router.post("/", async function (req, res, _) {
   const email_id = normalizeString(req.body.email_id);
   const phone_number = normalizeString(req.body.phone_number);
   const assignedExam = normalizeExamId(req.body.assigned_exam_id);
-  const username = normalizeString(req.body.username) || email_id;
-  const password = normalizeString(req.body.password) || email_id;
+  const username = normalizeString(req.body.username) || roll_number;
+  const password = normalizeString(req.body.password) || dob;
 
   if (
     name == null ||

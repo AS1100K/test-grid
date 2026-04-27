@@ -287,7 +287,10 @@ export default function NewUser() {
                   value={rollNumber}
                   onChange={(e) => setRollNumber(e.target.value)}
                   error={Boolean(errors.rollNumber)}
-                  helperText={errors.rollNumber}
+                  helperText={
+                    errors.rollNumber ||
+                    "The Roll Number will be the default username."
+                  }
                 />
                 <TextField
                   label="DOB"
@@ -297,7 +300,10 @@ export default function NewUser() {
                   value={dob}
                   onChange={(e) => setDob(e.target.value)}
                   error={Boolean(errors.dob)}
-                  helperText={errors.dob}
+                  helperText={
+                    errors.dob ||
+                    "The DOB will be the default password in `yyyy-mm-dd` format."
+                  }
                   InputLabelProps={{ shrink: true }}
                 />
                 <TextField
@@ -307,10 +313,7 @@ export default function NewUser() {
                   value={emailId}
                   onChange={(e) => setEmailId(e.target.value)}
                   error={Boolean(errors.emailId)}
-                  helperText={
-                    errors.emailId ||
-                    "This email id itself will be used as the default password."
-                  }
+                  helperText={errors.emailId}
                 />
                 <TextField
                   label="Phone Number"
@@ -322,29 +325,26 @@ export default function NewUser() {
                   helperText={errors.phoneNumber}
                 />
 
-              <FormControl
-                fullWidth
-                error={Boolean(errors.assignedExamId)}
-              >
-                <InputLabel id="assigned-exam-id-label">
-                  Assigned Exam
-                </InputLabel>
-                <Select
-                  labelId="assigned-exam-id-label"
-                  label="Assigned Exam"
-                  value={assignedExamId}
-                  onChange={(e) => setAssignedExamId(e.target.value)}
-                >
-                  <MenuItem value="">
-                    <em>None</em>
-                  </MenuItem>
-                  {exams.map((exam) => (
-                    <MenuItem key={exam.id} value={exam.id}>
-                      {exam.id}: {exam.title}
+                <FormControl fullWidth error={Boolean(errors.assignedExamId)}>
+                  <InputLabel id="assigned-exam-id-label">
+                    Assigned Exam
+                  </InputLabel>
+                  <Select
+                    labelId="assigned-exam-id-label"
+                    label="Assigned Exam"
+                    value={assignedExamId}
+                    onChange={(e) => setAssignedExamId(e.target.value)}
+                  >
+                    <MenuItem value="">
+                      <em>None</em>
                     </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                    {exams.map((exam) => (
+                      <MenuItem key={exam.id} value={exam.id}>
+                        {exam.id}: {exam.title}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </>
             )}
 

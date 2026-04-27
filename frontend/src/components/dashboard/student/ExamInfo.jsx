@@ -94,11 +94,11 @@ export function ExamInfo({
         </Box>
 
         <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
-          Buttons &amp; Actions
+          Buttons & Actions
         </Typography>
         <Typography variant="body2" component="ul" sx={{ pl: 2, mb: 2 }}>
           <li>
-            <strong>Save &amp; Next</strong> — Saves your selected answer to the
+            <strong>Save & Next</strong> — Saves your selected answer to the
             server and moves to the next question.
           </li>
           <li>
@@ -124,7 +124,7 @@ export function ExamInfo({
         </Typography>
         <Typography variant="body2" sx={{ mb: 2 }}>
           Selecting an option does <strong>not</strong> automatically save it.
-          You must click <strong>Save &amp; Next</strong> (or{" "}
+          You must click <strong>Save & Next</strong> (or{" "}
           <strong>Save</strong> on the last question) to persist your answer. A{" "}
           <em>Not Saved</em> indicator will appear next to the question number
           whenever your current selection has not yet been saved.

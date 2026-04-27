@@ -131,7 +131,7 @@ function parseUserCell(kind, value) {
     }
     case "assigned_exam_id": {
       // Allow numeric IDs or string aliases
-      if (value == null || value === "") {
+      if (value == null) {
         return null;
       }
       const num = Number(value);

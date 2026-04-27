@@ -436,14 +436,19 @@ export default function QuestionPagination({
                           handleAddAlias();
                         }
                       }}
-                      helperText="No spaces allowed (e.g. B_TECH_1)"
+                      error={/\s/.test(newAlias)}
+                      helperText={
+                        /\s/.test(newAlias)
+                          ? "Spaces are not allowed in an alias."
+                          : "No spaces allowed (e.g. B_TECH_1)"
+                      }
                       sx={{ flex: 1 }}
                     />
                     <Button
                       variant="outlined"
                       startIcon={<AddIcon />}
                       onClick={handleAddAlias}
-                      disabled={addingAlias || !newAlias.trim()}
+                      disabled={addingAlias || !newAlias.trim() || /\s/.test(newAlias)}
                       sx={{ alignSelf: "flex-start", mt: 0.5 }}
                     >
                       Add

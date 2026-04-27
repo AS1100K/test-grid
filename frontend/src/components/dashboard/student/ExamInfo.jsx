@@ -17,7 +17,7 @@ const LEGEND = [
   {
     status: "marked_for_review",
     description:
-      "Marked for Review — flagged for later review. The saved answer is cleared when marked.",
+      "Marked for Review — flagged for later review. Any saved answer is removed from the server and will NOT be considered for evaluation.",
   },
 ];
 
@@ -111,7 +111,10 @@ export function ExamInfo({
           </li>
           <li>
             <strong>Mark for Review</strong> — Flags the question for later
-            review and clears any saved answer.
+            review. If a response was already saved, it is deleted from the
+            server. <strong>Marked-for-review questions are not considered
+            for evaluation.</strong> Your local selection remains visible so
+            you can save it again before submitting.
           </li>
           <li>
             <strong>Next</strong> — Navigates to the next question without

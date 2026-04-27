@@ -92,7 +92,42 @@ export default function ExamQuestion({
     );
   }
 
-  function handleMarkForReview() {
+  async function handleMarkForReview() {
+    if (!currentQuestion) {
+      return;
+    }
+
+    // If the question has a saved response in the DB, delete it first so
+    // marked-for-review answers are never submitted for grading.
+    if (currentQuestion.selected_option !== null) {
+      setLoading(true);
+
+      const res = await fetch_(
+        "POST",
+        "/api/student/save_response",
+        {
+          question_id: currentQuestion.id,
+          selected_option: null,
+        },
+        {
+          Authorization: `Bearer ${token}`,
+        },
+      );
+
+      setLoading(false);
+
+      if (!res.success) {
+        addNotification({
+          type: "error",
+          message: res.message,
+        });
+        return;
+      }
+    }
+
+    // Update local state: mark as reviewed and clear the persisted option.
+    // The radio-group selection (selectedOption) is intentionally left intact
+    // so the student can still see which option they had chosen locally.
     updateQuestionStatus("marked_for_review");
   }
 

@@ -149,12 +149,15 @@ function SubmissionOverview() {
           ? `/api/exams/${exam_id}/submissions/export/summary`
           : `/api/exams/${exam_id}/submissions/export/full`;
 
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}${endpoint}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}${endpoint}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
 
       if (!response.ok) {
         addNotification({
@@ -169,7 +172,7 @@ function SubmissionOverview() {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `exam-${exam_id}-${kind}.xls`;
+      anchor.download = `exam-${exam_id}-${kind}.csv`;
       anchor.click();
       URL.revokeObjectURL(url);
     } catch (err) {
@@ -216,10 +219,18 @@ function SubmissionOverview() {
               color="secondary"
               variant="filled"
             />
-            <Button size="small" variant="outlined" onClick={() => handleDownload(EXPORT_KINDS.summary)}>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => handleDownload(EXPORT_KINDS.summary)}
+            >
               Download Summary Excel
             </Button>
-            <Button size="small" variant="outlined" onClick={() => handleDownload(EXPORT_KINDS.full)}>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => handleDownload(EXPORT_KINDS.full)}
+            >
               Download Full Excel
             </Button>
           </Stack>
@@ -233,7 +244,9 @@ function SubmissionOverview() {
                   <TableCell>
                     <TableSortLabel
                       active={sortBy === "student_username"}
-                      direction={sortBy === "student_username" ? sortOrder : "asc"}
+                      direction={
+                        sortBy === "student_username" ? sortOrder : "asc"
+                      }
                       onClick={() => handleSort("student_username")}
                     >
                       Username
@@ -272,8 +285,11 @@ function SubmissionOverview() {
               </TableHead>
               <TableBody>
                 {submissionRows.length === 0 ? (
-                    <TableRow>
-                    <TableCell colSpan={TABLE_COLUMN_COUNT} sx={{ textAlign: "center" }}>
+                  <TableRow>
+                    <TableCell
+                      colSpan={TABLE_COLUMN_COUNT}
+                      sx={{ textAlign: "center" }}
+                    >
                       No submissions found.
                     </TableCell>
                   </TableRow>
@@ -289,7 +305,9 @@ function SubmissionOverview() {
                         <Button
                           size="small"
                           variant="text"
-                          onClick={() => handleViewResponses(row.student_username)}
+                          onClick={() =>
+                            handleViewResponses(row.student_username)
+                          }
                         >
                           View responses
                         </Button>

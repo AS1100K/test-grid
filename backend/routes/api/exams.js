@@ -405,4 +405,135 @@ router.get("/:exam_id/submissions/export/full", async function (req, res, _) {
   return res.status(200).send(csv);
 });
 
+router.get("/:exam_id/aliases", async function (req, res, _) {
+  const permission = await hasPermissions(req.headers.authorization, "super_admin");
+  if (!permission.success) {
+    return res.status(permission.status).send(permission);
+  }
+
+  const examId = Number(req.params.exam_id);
+  if (!Number.isInteger(examId) || examId <= 0) {
+    return res.status(400).send({
+      status: 400,
+      success: false,
+      message: "Invalid exam id.",
+    });
+  }
+
+  const [rows] = await pool.query(
+    "SELECT id, alias FROM exam_aliases WHERE exam_id=? ORDER BY alias ASC",
+    [examId],
+  );
+
+  return res.status(200).send({
+    status: 200,
+    success: true,
+    data: rows,
+  });
+});
+
+router.post("/:exam_id/aliases", async function (req, res, _) {
+  const permission = await hasPermissions(req.headers.authorization, "super_admin");
+  if (!permission.success) {
+    return res.status(permission.status).send(permission);
+  }
+
+  const examId = Number(req.params.exam_id);
+  if (!Number.isInteger(examId) || examId <= 0) {
+    return res.status(400).send({
+      status: 400,
+      success: false,
+      message: "Invalid exam id.",
+    });
+  }
+
+  const alias = typeof req.body.alias === "string" ? req.body.alias.trim() : null;
+  if (!alias) {
+    return res.status(400).send({
+      status: 400,
+      success: false,
+      message: "`alias` is required and must be a non-empty string.",
+    });
+  }
+
+  if (/\s/.test(alias)) {
+    return res.status(400).send({
+      status: 400,
+      success: false,
+      message: "`alias` must not contain whitespace.",
+    });
+  }
+
+  const [examRows] = await pool.query("SELECT id FROM exams WHERE id=? LIMIT 1", [examId]);
+  if (examRows.length === 0) {
+    return res.status(404).send({
+      status: 404,
+      success: false,
+      message: "Exam not found.",
+    });
+  }
+
+  try {
+    const [result] = await pool.query(
+      "INSERT INTO exam_aliases (exam_id, alias) VALUES (?, ?)",
+      [examId, alias],
+    );
+    return res.status(201).send({
+      status: 201,
+      success: true,
+      data: { id: result.insertId, alias },
+    });
+  } catch (err) {
+    if (err.code === "ER_DUP_ENTRY") {
+      return res.status(409).send({
+        status: 409,
+        success: false,
+        message: "Alias already exists.",
+      });
+    }
+    globalThis.console.error(err);
+    return res.status(500).send({
+      status: 500,
+      success: false,
+      message: `Failed to create alias. ${err.message}`,
+    });
+  }
+});
+
+router.delete("/:exam_id/aliases/:alias", async function (req, res, _) {
+  const permission = await hasPermissions(req.headers.authorization, "super_admin");
+  if (!permission.success) {
+    return res.status(permission.status).send(permission);
+  }
+
+  const examId = Number(req.params.exam_id);
+  if (!Number.isInteger(examId) || examId <= 0) {
+    return res.status(400).send({
+      status: 400,
+      success: false,
+      message: "Invalid exam id.",
+    });
+  }
+
+  const alias = req.params.alias;
+
+  const [result] = await pool.query(
+    "DELETE FROM exam_aliases WHERE exam_id=? AND alias=?",
+    [examId, alias],
+  );
+
+  if (result.affectedRows === 0) {
+    return res.status(404).send({
+      status: 404,
+      success: false,
+      message: "Alias not found.",
+    });
+  }
+
+  return res.status(200).send({
+    status: 200,
+    success: true,
+  });
+});
+
 module.exports = router;

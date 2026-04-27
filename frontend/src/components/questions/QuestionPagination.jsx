@@ -15,10 +15,13 @@ import {
   Tooltip,
   Typography,
   Paper,
+  Divider,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import SettingsIcon from "@mui/icons-material/Settings";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
 import fetch_ from "../../utils";
 import useNotification from "../../contexts/useNotification";
 import useAuth from "../../contexts/useAuth";
@@ -47,6 +50,11 @@ export default function QuestionPagination({
     is_active: !!examInfo?.is_active,
     duration: examInfo?.duration != null ? examInfo.duration : "",
   }));
+
+  const [aliases, setAliases] = useState([]);
+  const [loadingAliases, setLoadingAliases] = useState(false);
+  const [newAlias, setNewAlias] = useState("");
+  const [addingAlias, setAddingAlias] = useState(false);
 
   const handleUploadPaper = async () => {
     setUploadingPaper(true);
@@ -82,7 +90,68 @@ export default function QuestionPagination({
       is_active: !!examInfo?.is_active,
       duration: examInfo?.duration != null ? examInfo.duration : "",
     });
+    setNewAlias("");
     setSettingsOpen(true);
+    loadAliases();
+  };
+
+  async function loadAliases() {
+    setLoadingAliases(true);
+    try {
+      const res = await fetch_(
+        "GET",
+        `/api/exams/${exam_id}/aliases`,
+        null,
+        { Authorization: `Bearer ${token}` },
+      );
+      if (res && res.success) {
+        setAliases(res.data ?? []);
+      }
+    } finally {
+      setLoadingAliases(false);
+    }
+  }
+
+  const handleAddAlias = async () => {
+    const alias = newAlias.trim();
+    if (!alias) return;
+    setAddingAlias(true);
+    try {
+      const res = await fetch_(
+        "POST",
+        `/api/exams/${exam_id}/aliases`,
+        { alias },
+        { Authorization: `Bearer ${token}` },
+      );
+      if (!res.success) {
+        addNotification({ type: "error", message: res.message });
+        return;
+      }
+      setNewAlias("");
+      await loadAliases();
+    } catch (err) {
+      addNotification({ type: "error", message: err?.message ?? String(err) });
+    } finally {
+      setAddingAlias(false);
+    }
+  };
+
+  const handleDeleteAlias = async (alias) => {
+    try {
+      const res = await fetch_(
+        "DELETE",
+        `/api/exams/${exam_id}/aliases/${encodeURIComponent(alias)}`,
+        null,
+        { Authorization: `Bearer ${token}` },
+      );
+      if (!res.success) {
+        addNotification({ type: "error", message: res.message });
+        return;
+      }
+      setAliases((prev) => prev.filter((a) => a.alias !== alias));
+    } catch (err) {
+      addNotification({ type: "error", message: err?.message ?? String(err) });
+    }
   };
 
   const handleCloseSettings = () => {
@@ -320,6 +389,69 @@ export default function QuestionPagination({
               }
               label="Exam is active"
             />
+
+            <Divider />
+
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Exam Aliases
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                Aliases can be used in place of the numeric exam ID when bulk importing students.
+              </Typography>
+
+              {loadingAliases ? (
+                <Typography variant="body2" color="text.secondary">
+                  Loading aliases…
+                </Typography>
+              ) : (
+                <Stack spacing={1}>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                    {aliases.length === 0 && (
+                      <Typography variant="body2" color="text.secondary">
+                        No aliases yet.
+                      </Typography>
+                    )}
+                    {aliases.map((a) => (
+                      <Chip
+                        key={a.id}
+                        label={a.alias}
+                        onDelete={() => handleDeleteAlias(a.alias)}
+                        deleteIcon={<DeleteIcon />}
+                        size="small"
+                        variant="outlined"
+                      />
+                    ))}
+                  </Stack>
+
+                  <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                    <TextField
+                      size="small"
+                      label="New alias"
+                      value={newAlias}
+                      onChange={(e) => setNewAlias(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddAlias();
+                        }
+                      }}
+                      helperText="No spaces allowed (e.g. B_TECH_1)"
+                      sx={{ flex: 1 }}
+                    />
+                    <Button
+                      variant="outlined"
+                      startIcon={<AddIcon />}
+                      onClick={handleAddAlias}
+                      disabled={addingAlias || !newAlias.trim()}
+                      sx={{ alignSelf: "flex-start", mt: 0.5 }}
+                    >
+                      Add
+                    </Button>
+                  </Stack>
+                </Stack>
+              )}
+            </Box>
           </Stack>
         </DialogContent>
         <DialogActions>

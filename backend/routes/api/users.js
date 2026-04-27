@@ -122,14 +122,28 @@ function parseUserCell(kind, value) {
     case "email_id":
     case "phone_number":
       return normalizeString(value);
-    case "roll_number":
-    case "assigned_exam_id": {
+    case "roll_number": {
       const integer = Number(value);
       if (Number.isNaN(integer) || !Number.isInteger(integer) || integer < 0) {
         throw new Error("Invalid " + kind);
       }
-
       return integer;
+    }
+    case "assigned_exam_id": {
+      // Allow numeric IDs or string aliases
+      if (value == null || value === "") {
+        return null;
+      }
+      const num = Number(value);
+      if (Number.isInteger(num) && num > 0) {
+        return num;
+      }
+      // Treat as a string alias to be resolved during import
+      const alias = String(value).trim();
+      if (alias === "") {
+        return null;
+      }
+      return alias;
     }
     case "dob":
       return normalizeDob(value);
@@ -618,6 +632,9 @@ router.post("/import/students", async function (req, res, _) {
   try {
     await conn.beginTransaction();
 
+    // Build a cache for alias → exam_id lookups to reduce DB queries
+    const aliasCache = new Map();
+
     for (const user of users) {
       const roll_number = user.roll_number;
       if (typeof roll_number !== "number") {
@@ -648,7 +665,26 @@ router.post("/import/students", async function (req, res, _) {
         throw new Error("Invalid Student DOB.");
       }
 
-      const assigned_exam_id = user.assigned_exam_id;
+      let assigned_exam_id = user.assigned_exam_id;
+
+      // Resolve string alias to numeric exam_id
+      if (typeof assigned_exam_id === "string") {
+        const aliasKey = assigned_exam_id;
+        if (aliasCache.has(aliasKey)) {
+          assigned_exam_id = aliasCache.get(aliasKey);
+        } else {
+          const [aliasRows] = await conn.query(
+            "SELECT exam_id FROM exam_aliases WHERE alias=? LIMIT 1",
+            [aliasKey],
+          );
+          if (aliasRows.length === 0) {
+            throw new Error(`Unknown exam alias: "${aliasKey}"`);
+          }
+          assigned_exam_id = aliasRows[0].exam_id;
+          aliasCache.set(aliasKey, assigned_exam_id);
+        }
+      }
+
       if (typeof assigned_exam_id !== "number") {
         throw new Error("Invalid Assigned Exam ID");
       }

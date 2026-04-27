@@ -92,50 +92,9 @@ export default function ExamQuestion({
     );
   }
 
-  async function handleMarkForReview() {
-    if (!currentQuestion) {
-      return;
-    }
-
-    // If the question has a saved response in the DB, delete it first so
-    // marked-for-review answers are never submitted for grading.
-    if (currentQuestion.selected_option !== null) {
-      setLoading(true);
-
-      const res = await fetch_(
-        "POST",
-        "/api/student/save_response",
-        {
-          question_id: currentQuestion.id,
-          selected_option: null,
-        },
-        {
-          Authorization: `Bearer ${token}`,
-        },
-      );
-
-      setLoading(false);
-
-      if (!res.success) {
-        addNotification({
-          type: "error",
-          message: res.message,
-        });
-        return;
-      }
-    }
-
-    // Update local state: mark as reviewed and clear the persisted option.
-    // The radio-group selection (selectedOption) is intentionally left intact
-    // so the student can still see which option they had chosen locally.
-    updateQuestionStatus("marked_for_review");
-  }
-
-  async function handleClearResponse() {
-    if (!currentQuestion) {
-      return;
-    }
-
+  // Deletes the saved response for the current question from the server.
+  // Returns true on success, false on failure (error notification already shown).
+  async function clearResponseOnServer() {
     setLoading(true);
 
     const res = await fetch_(
@@ -150,14 +109,44 @@ export default function ExamQuestion({
       },
     );
 
+    setLoading(false);
+
     if (!res.success) {
       addNotification({
         type: "error",
         message: res.message,
       });
-      setLoading(false);
+      return false;
+    }
+
+    return true;
+  }
+
+  async function handleMarkForReview() {
+    if (!currentQuestion) {
       return;
     }
+
+    // If the question has a saved response in the DB, delete it first so
+    // marked-for-review answers are never submitted for grading.
+    if (currentQuestion.selected_option !== null) {
+      const ok = await clearResponseOnServer();
+      if (!ok) return;
+    }
+
+    // Update local state: mark as reviewed and clear the persisted option.
+    // The radio-group selection (selectedOption) is intentionally left intact
+    // so the student can still see which option they had chosen locally.
+    updateQuestionStatus("marked_for_review");
+  }
+
+  async function handleClearResponse() {
+    if (!currentQuestion) {
+      return;
+    }
+
+    const ok = await clearResponseOnServer();
+    if (!ok) return;
 
     setSelectedOption(null);
     setSections((prevSections) =>

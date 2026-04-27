@@ -47,6 +47,11 @@ export default function ExamQuestion({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSectionIndex, currentQuestionIndex]);
 
+  const isNotSaved =
+    currentQuestion !== undefined &&
+    selectedOption !== (currentQuestion?.selected_option ?? null) &&
+    currentQuestion?.status !== "marked_for_review";
+
   function updateQuestionStatus(status) {
     if (!setSections || !currentQuestion) {
       return;
@@ -83,6 +88,51 @@ export default function ExamQuestion({
 
   function handleMarkForReview() {
     updateQuestionStatus("marked_for_review");
+  }
+
+  async function handleClearResponse() {
+    if (!currentQuestion) {
+      return;
+    }
+
+    setLoading(true);
+
+    const res = await fetch_(
+      "POST",
+      "/api/student/save_response",
+      {
+        question_id: currentQuestion.id,
+        selected_option: null,
+      },
+      {
+        Authorization: `Bearer ${token}`,
+      },
+    );
+
+    if (!res.success) {
+      addNotification({
+        type: "error",
+        message: res.message,
+      });
+      setLoading(false);
+      return;
+    }
+
+    setSelectedOption(null);
+    setSections((prevSections) =>
+      prevSections.map((section, sectionIdx) => {
+        if (sectionIdx !== currentSectionIndex) return section;
+        return {
+          ...section,
+          questions: section.questions.map((question, questionIdx) =>
+            questionIdx === currentQuestionIndex
+              ? { ...question, status: "not_attempted", selected_option: null }
+              : question,
+          ),
+        };
+      }),
+    );
+    setLoading(false);
   }
 
   async function handleSaveNNext() {
@@ -216,6 +266,14 @@ export default function ExamQuestion({
                     label="Marked for Review"
                   />
                 )}
+                {isNotSaved && (
+                  <Chip
+                    color="warning"
+                    size="small"
+                    label="Not Saved"
+                    variant="outlined"
+                  />
+                )}
               </Box>
             </Box>
 
@@ -276,7 +334,8 @@ export default function ExamQuestion({
             <Button
               variant="contained"
               color="inherit"
-              onClick={() => setSelectedOption(null)}
+              loading={loading}
+              onClick={handleClearResponse}
             >
               Clear Response
             </Button>

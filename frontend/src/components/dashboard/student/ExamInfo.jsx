@@ -1,7 +1,25 @@
-import { Button, Container, Divider, Paper, Typography } from "@mui/material";
+import { Box, Button, Container, Divider, Paper, Typography } from "@mui/material";
 import PlayIcon from "@mui/icons-material/PlayArrow";
 import fetch_ from "../../../utils";
 import useAuth from "../../../contexts/useAuth";
+import QuestionStatusButton from "./QuestionStatusButton";
+
+const LEGEND = [
+  {
+    status: "not_attempted",
+    description:
+      "Not Attempted — you have not selected or saved an answer for this question.",
+  },
+  {
+    status: "saved",
+    description: "Saved — your answer has been saved successfully.",
+  },
+  {
+    status: "marked_for_review",
+    description:
+      "Marked for Review — flagged for later review. The saved answer is cleared when marked.",
+  },
+];
 
 export function ExamInfo({
   setExamStatus,
@@ -63,21 +81,17 @@ export function ExamInfo({
         <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
           Question Status Legend
         </Typography>
-        <Typography variant="body2" component="ul" sx={{ pl: 2, mb: 2 }}>
-          <li>
-            <strong>Blue (outlined)</strong> — Not Attempted: you have not
-            selected or saved an answer for this question.
-          </li>
-          <li>
-            <strong>Green (filled)</strong> — Saved: your answer has been saved
-            successfully.
-          </li>
-          <li>
-            <strong>Purple (filled)</strong> — Marked for Review: you have
-            flagged this question to revisit later. The answer is cleared when a
-            question is marked for review.
-          </li>
-        </Typography>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mb: 2 }}>
+          {LEGEND.map(({ status, description }) => (
+            <Box
+              key={status}
+              sx={{ display: "flex", alignItems: "center", gap: 2 }}
+            >
+              <QuestionStatusButton status={status} label="1" />
+              <Typography variant="body2">{description}</Typography>
+            </Box>
+          ))}
+        </Box>
 
         <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
           Buttons &amp; Actions

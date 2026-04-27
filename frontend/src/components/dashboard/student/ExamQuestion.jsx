@@ -47,6 +47,17 @@ export default function ExamQuestion({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSectionIndex, currentQuestionIndex]);
 
+  // isNotSaved: true when the local selection differs from the persisted one.
+  // The marked_for_review check is intentional: marking for review clears the
+  // persisted selected_option to null, but we deliberately leave the RadioGroup
+  // visual selection intact so the student can still see which option they had
+  // chosen. Without this exclusion, the "Not Saved" chip would appear for every
+  // marked-for-review question that had a prior selection.
+  const isNotSaved =
+    currentQuestion !== undefined &&
+    selectedOption !== (currentQuestion?.selected_option ?? null) &&
+    currentQuestion?.status !== "marked_for_review";
+
   function updateQuestionStatus(status) {
     if (!setSections || !currentQuestion) {
       return;
@@ -81,8 +92,77 @@ export default function ExamQuestion({
     );
   }
 
-  function handleMarkForReview() {
+  // Deletes the saved response for the current question from the server.
+  // Returns true on success, false on failure (error notification already shown).
+  async function clearResponseOnServer() {
+    setLoading(true);
+
+    const res = await fetch_(
+      "POST",
+      "/api/student/save_response",
+      {
+        question_id: currentQuestion.id,
+        selected_option: null,
+      },
+      {
+        Authorization: `Bearer ${token}`,
+      },
+    );
+
+    setLoading(false);
+
+    if (!res.success) {
+      addNotification({
+        type: "error",
+        message: res.message,
+      });
+      return false;
+    }
+
+    return true;
+  }
+
+  async function handleMarkForReview() {
+    if (!currentQuestion) {
+      return;
+    }
+
+    // If the question has a saved response in the DB, delete it first so
+    // marked-for-review answers are never submitted for grading.
+    if (currentQuestion.selected_option !== null) {
+      const ok = await clearResponseOnServer();
+      if (!ok) return;
+    }
+
+    // Update local state: mark as reviewed and clear the persisted option.
+    // The radio-group selection (selectedOption) is intentionally left intact
+    // so the student can still see which option they had chosen locally.
     updateQuestionStatus("marked_for_review");
+  }
+
+  async function handleClearResponse() {
+    if (!currentQuestion) {
+      return;
+    }
+
+    const ok = await clearResponseOnServer();
+    if (!ok) return;
+
+    setSelectedOption(null);
+    setSections((prevSections) =>
+      prevSections.map((section, sectionIdx) => {
+        if (sectionIdx !== currentSectionIndex) return section;
+        return {
+          ...section,
+          questions: section.questions.map((question, questionIdx) =>
+            questionIdx === currentQuestionIndex
+              ? { ...question, status: "not_attempted", selected_option: null }
+              : question,
+          ),
+        };
+      }),
+    );
+    setLoading(false);
   }
 
   async function handleSaveNNext() {
@@ -216,6 +296,14 @@ export default function ExamQuestion({
                     label="Marked for Review"
                   />
                 )}
+                {isNotSaved && (
+                  <Chip
+                    color="warning"
+                    size="small"
+                    label="Not Saved"
+                    variant="outlined"
+                  />
+                )}
               </Box>
             </Box>
 
@@ -276,7 +364,8 @@ export default function ExamQuestion({
             <Button
               variant="contained"
               color="inherit"
-              onClick={() => setSelectedOption(null)}
+              loading={loading}
+              onClick={handleClearResponse}
             >
               Clear Response
             </Button>

@@ -1,4 +1,5 @@
 import { Box, Button, Paper, Typography } from "@mui/material";
+import QuestionStatusButton from "./QuestionStatusButton";
 
 export default function ExamOverview({
   sections,
@@ -36,46 +37,17 @@ export default function ExamOverview({
                 mt: 1,
               }}
             >
-              {section.questions.map((question, j) => {
-                let color;
-                let variant;
-                let sx;
-
-                if (question.status === "not_attempted") {
-                  color = "primary";
-                  variant = "outlined";
-                } else if (question.status === "saved") {
-                  color = "success";
-                  variant = "contained";
-                } else if (question.status === "marked_for_review") {
-                  sx = {
-                    backgroundColor: "purple",
-                    "&:hover": { backgroundColor: "rebeccapurple" },
-                  };
-                  variant = "contained";
-                }
-
-                return (
-                  <Button
-                    key={j}
-                    variant={variant}
-                    sx={{
-                      borderRadius: 999,
-                      width: 40,
-                      height: 40,
-                      minWidth: 0,
-                      ...sx,
-                    }}
-                    onClick={() => {
-                      setCurrentSectionIndex(i);
-                      setCurrentQuestionIndex(j);
-                    }}
-                    color={color}
-                  >
-                    {j + 1}
-                  </Button>
-                );
-              })}
+              {section.questions.map((question, j) => (
+                <QuestionStatusButton
+                  key={j}
+                  status={question.status}
+                  label={j + 1}
+                  onClick={() => {
+                    setCurrentSectionIndex(i);
+                    setCurrentQuestionIndex(j);
+                  }}
+                />
+              ))}
             </Box>
           </Box>
         );

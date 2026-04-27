@@ -112,7 +112,7 @@ export function ExamInfo({
           Selecting an option does <strong>not</strong> automatically save it.
           You must click <strong>Save &amp; Next</strong> (or{" "}
           <strong>Save</strong> on the last question) to persist your answer. A{" "}
-          <em>Not Saved</em> badge will appear next to the question number
+          <em>Not Saved</em> indicator will appear next to the question number
           whenever your current selection has not yet been saved.
         </Typography>
 

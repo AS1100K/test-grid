@@ -47,6 +47,12 @@ export default function ExamQuestion({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSectionIndex, currentQuestionIndex]);
 
+  // isNotSaved: true when the local selection differs from the persisted one.
+  // The marked_for_review check is intentional: marking for review clears the
+  // persisted selected_option to null, but we deliberately leave the RadioGroup
+  // visual selection intact so the student can still see which option they had
+  // chosen. Without this exclusion, the "Not Saved" chip would appear for every
+  // marked-for-review question that had a prior selection.
   const isNotSaved =
     currentQuestion !== undefined &&
     selectedOption !== (currentQuestion?.selected_option ?? null) &&

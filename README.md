@@ -29,6 +29,11 @@ docker run -d \
 
 Open the app at `http://localhost:5000`.
 
+## OpenAPI specification
+
+- Backend OpenAPI document: `backend/openapi.json`
+- Coverage validation command: `cd backend && npm run openapi:check`
+
 ## Production notes
 
 - Always use a persistent volume for `/var/lib/mysql`.

@@ -8,7 +8,8 @@
     "watch": "nodemon ./bin/www",
     "init-and-watch": "node ./scripts/create_default_user.js && npm run watch",
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "openapi:check": "node ./scripts/openapiCoverage.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

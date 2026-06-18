@@ -1,4 +1,34 @@
-import { Box, Chip, Paper, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Chip,
+  IconButton,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
+  TextareaAutosize,
+  TextField,
+  Typography,
+} from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
+import { useState } from "react";
+import { useEffect } from "react";
+
+const DEFAULT_SECTION_EDITING_STATE = {
+  name: null,
+  instructions: null,
+};
+
+const DEFAULT_QUESTION_EDITING_STATE = {
+  question_text: null,
+  marks: null,
+  correct_option: null,
+  option_a: null,
+  option_b: null,
+  option_c: null,
+  option_d: null,
+};
 
 // TODO: Make this component versatile, and if the user is student
 // make the student select option and save them.
@@ -7,7 +37,28 @@ export default function Question({
   currentSectionIndex,
   currentQuestionIndex,
   questions,
+  setQuestions,
+  is_saved,
 }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [sectionEditing, setSectionEditing] = useState(
+    DEFAULT_SECTION_EDITING_STATE,
+  );
+  const [questionEditing, setQuestionEditing] = useState(
+    DEFAULT_QUESTION_EDITING_STATE,
+  );
+
+  const resetEditing = () => {
+    setIsEditing(false);
+    setSectionEditing(DEFAULT_SECTION_EDITING_STATE);
+    setQuestionEditing(DEFAULT_QUESTION_EDITING_STATE);
+  };
+
+  useEffect(() => {
+    const handleSelectionChange = () => resetEditing;
+    handleSelectionChange();
+  }, [currentSectionIndex, currentQuestionIndex]);
+
   const section = Array.isArray(questions)
     ? questions[currentSectionIndex] || null
     : null;
@@ -27,6 +78,41 @@ export default function Question({
 
   const isIntroView = currentQuestionIndex === -1;
 
+  const handleEdit = () => {
+    if (isIntroView) {
+      // Update the Section
+      if (is_saved) {
+        // TODO: Make the API Call
+      }
+
+      setQuestions((prevQues) =>
+        prevQues.map((prev, index) =>
+          index === currentSectionIndex ? { ...prev, ...sectionEditing } : prev,
+        ),
+      );
+    } else {
+      // Update the Question
+      if (is_saved) {
+        // TODO: Make the API Call
+      }
+
+      setQuestions((prevQues) =>
+        prevQues.map((prev, index) => {
+          if (index !== currentSectionIndex) return prev;
+
+          return {
+            ...prev,
+            questions: prev.questions.map((ques, qIndex) =>
+              qIndex === currentQuestionIndex ? questionEditing : ques,
+            ),
+          };
+        }),
+      );
+    }
+
+    resetEditing();
+  };
+
   return (
     <Paper
       elevation={1}
@@ -40,18 +126,63 @@ export default function Question({
         // Section intro: name + instructions
         <Stack spacing={2}>
           <Box>
-            <Chip
-              label="Section overview"
-              size="small"
-              variant="outlined"
-              color="primary"
-            />
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-              {section.name || `Section ${currentSectionIndex + 1}`}
-            </Typography>
+            <Stack
+              direction="row"
+              sx={{ justifyContent: "space-between", alignItems: "center" }}
+            >
+              <Chip
+                label="Section overview"
+                size="small"
+                variant="outlined"
+                color="primary"
+              />
+
+              <IconButton
+                onClick={() => {
+                  setIsEditing(!isEditing);
+                  setSectionEditing({
+                    name: section.name,
+                    instructions: section.instructions,
+                  });
+                }}
+              >
+                <EditIcon />
+              </IconButton>
+            </Stack>
+
+            {isEditing ? (
+              <TextField
+                variant="filled"
+                label="Section Name"
+                value={sectionEditing.name}
+                onChange={(e) => {
+                  setSectionEditing({
+                    ...sectionEditing,
+                    name: e.target.value,
+                  });
+                }}
+              />
+            ) : (
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+                {section.name || `Section ${currentSectionIndex + 1}`}
+              </Typography>
+            )}
           </Box>
 
-          {section.instructions ? (
+          {isEditing ? (
+            <TextareaAutosize
+              minRows={3}
+              placeholder="Section Instructions"
+              style={{ width: "100%", fontFamily: "inherit" }}
+              value={sectionEditing.instructions}
+              onChange={(e) => {
+                setSectionEditing({
+                  ...sectionEditing,
+                  instructions: e.target.value,
+                });
+              }}
+            />
+          ) : section.instructions ? (
             <Typography
               variant="body1"
               color="text.secondary"
@@ -85,32 +216,63 @@ export default function Question({
               </Typography>
             </Box>
 
-            <Chip
-              label={`${question.marks ?? 0} marks`}
-              color="secondary"
-              size="small"
-              variant="filled"
-            />
+            <Stack direction="row" sx={{ alignItems: "center", gap: 2 }}>
+              {isEditing ? (
+                <TextField
+                  variant="filled"
+                  label="Marks"
+                  type="number"
+                  value={questionEditing.marks}
+                  onChange={(e) => {
+                    setQuestionEditing({
+                      ...questionEditing,
+                      marks: Number(e.target.value),
+                    });
+                  }}
+                />
+              ) : (
+                <Chip
+                  label={`${question.marks ?? 0} marks`}
+                  color="secondary"
+                  size="small"
+                  variant="filled"
+                />
+              )}
+
+              <IconButton
+                onClick={() => {
+                  setQuestionEditing(question);
+                  setIsEditing(!isEditing);
+                }}
+              >
+                <EditIcon />
+              </IconButton>
+            </Stack>
           </Box>
 
-          <Typography variant="body1" sx={{ fontSize: 16 }}>
-            {question.question_text}
-          </Typography>
+          {isEditing ? (
+            <TextField
+              variant="filled"
+              label="Question Text"
+              value={questionEditing.question_text}
+              onChange={(e) => {
+                setQuestionEditing({
+                  ...questionEditing,
+                  question_text: e.target.value,
+                });
+              }}
+            />
+          ) : (
+            <Typography variant="body1" sx={{ fontSize: 16 }}>
+              {question.question_text}
+            </Typography>
+          )}
 
           <Stack spacing={1.5} sx={{ mt: 1 }}>
             {["a", "b", "c", "d"].map((optKey) => {
-              const label =
-                optKey === "a"
-                  ? question.option_a
-                  : optKey === "b"
-                    ? question.option_b
-                    : optKey === "c"
-                      ? question.option_c
-                      : question.option_d;
-
-              if (!label) return null;
-
-              const isCorrect = is_admin && question.correct_option === optKey;
+              const isCorrect = isEditing
+                ? questionEditing.correct_option === optKey
+                : question.correct_option === optKey;
 
               return (
                 <Box
@@ -136,7 +298,24 @@ export default function Question({
                     color={isCorrect ? "success" : "default"}
                     sx={{ minWidth: 32 }}
                   />
-                  <Typography variant="body2">{label}</Typography>
+                  {isEditing ? (
+                    <TextField
+                      variant="standard"
+                      label={"Option " + optKey.toUpperCase()}
+                      size="small"
+                      value={questionEditing[`option_${optKey}`]}
+                      onChange={(e) => {
+                        setQuestionEditing({
+                          ...questionEditing,
+                          [`option_${optKey}`]: e.target.value,
+                        });
+                      }}
+                    />
+                  ) : (
+                    <Typography variant="body2">
+                      {question[`option_${optKey}`]}
+                    </Typography>
+                  )}
                 </Box>
               );
             })}
@@ -144,7 +323,28 @@ export default function Question({
 
           {is_admin && question.correct_option && (
             <Typography variant="caption" color="success.main" sx={{ mt: 1 }}>
-              Correct option: {question.correct_option.toUpperCase()}
+              Correct option:{" "}
+              {isEditing ? (
+                <Select
+                  label="Correct Option"
+                  variant="standard"
+                  size="small"
+                  value={questionEditing.correct_option}
+                  onChange={(e) => {
+                    setQuestionEditing({
+                      ...questionEditing,
+                      correct_option: e.target.value,
+                    });
+                  }}
+                >
+                  <MenuItem value="a">A</MenuItem>
+                  <MenuItem value="b">B</MenuItem>
+                  <MenuItem value="c">C</MenuItem>
+                  <MenuItem value="d">D</MenuItem>
+                </Select>
+              ) : (
+                question.correct_option.toUpperCase()
+              )}{" "}
             </Typography>
           )}
         </Stack>
@@ -153,6 +353,22 @@ export default function Question({
         <Typography variant="body2" color="text.secondary">
           Question not found for this section.
         </Typography>
+      )}
+
+      {isEditing && (
+        <>
+          <Button
+            variant="contained"
+            sx={{ mt: 2, mr: 2 }}
+            onClick={resetEditing}
+            color="inherit"
+          >
+            Cancel
+          </Button>
+          <Button variant="contained" sx={{ mt: 2 }} onClick={handleEdit}>
+            Update
+          </Button>
+        </>
       )}
     </Paper>
   );

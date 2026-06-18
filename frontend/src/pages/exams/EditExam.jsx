@@ -125,6 +125,8 @@ export default function EditExam() {
         currentSectionIndex={currentSectionIndex}
         currentQuestionIndex={currentQuestionIndex}
         questions={questions}
+        setQuestions={setQuestions}
+        is_saved={uploadedFile === null}
       />
     </>
   );

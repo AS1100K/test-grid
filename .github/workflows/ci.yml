@@ -23,6 +23,9 @@ jobs:
       - name: Lint backend
         run: npm run lint
 
+      - name: Validate OpenAPI coverage
+        run: npm run openapi:check
+
       - name: Test backend
         run: npm test
 

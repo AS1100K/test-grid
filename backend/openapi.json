@@ -1,0 +1,84 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "test-grid backend API",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/auth/login": {
+      "post": {}
+    },
+    "/api/auth/verify": {
+      "post": {}
+    },
+    "/api/exams": {
+      "get": {},
+      "put": {}
+    },
+    "/api/exams/{exam_id}/submissions": {
+      "get": {}
+    },
+    "/api/exams/{exam_id}/submissions/{student_username}/responses": {
+      "get": {}
+    },
+    "/api/exams/{exam_id}/submissions/export/summary": {
+      "get": {}
+    },
+    "/api/exams/{exam_id}/submissions/export/full": {
+      "get": {}
+    },
+    "/api/exams/parse_paper": {
+      "post": {}
+    },
+    "/api/exams/paper/{exam_id}": {
+      "put": {}
+    },
+    "/api/exams/questions/{exam_id}": {
+      "get": {}
+    },
+    "/api/users": {
+      "get": {},
+      "post": {}
+    },
+    "/api/users/{username}": {
+      "put": {}
+    },
+    "/api/users/export/students": {
+      "get": {}
+    },
+    "/api/users/import/students": {
+      "post": {}
+    },
+    "/api/student/exam_info": {
+      "get": {}
+    },
+    "/api/student/start_exam": {
+      "post": {}
+    },
+    "/api/student/save_response": {
+      "post": {}
+    },
+    "/api/student/submit": {
+      "post": {}
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

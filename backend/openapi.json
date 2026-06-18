@@ -16,60 +16,557 @@
   ],
   "paths": {
     "/api/auth/login": {
-      "post": {}
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "username",
+                  "password"
+                ],
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Login successful"
+          }
+        }
+      }
     },
     "/api/auth/verify": {
-      "post": {}
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token verification result"
+          }
+        }
+      }
     },
     "/api/exams": {
-      "get": {},
-      "put": {}
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Exam list"
+          }
+        }
+      },
+      "put": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title"
+                ],
+                "properties": {
+                  "exam_id": {
+                    "type": "integer"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "duration": {
+                    "type": "integer",
+                    "nullable": true
+                  },
+                  "is_active": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Exam upserted"
+          },
+          "201": {
+            "description": "Exam created"
+          }
+        }
+      }
     },
     "/api/exams/{exam_id}/submissions": {
-      "get": {}
+      "get": {
+        "parameters": [
+          {
+            "name": "exam_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ASC",
+                "DESC"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Submission leaderboard"
+          }
+        }
+      }
     },
     "/api/exams/{exam_id}/submissions/{student_username}/responses": {
-      "get": {}
+      "get": {
+        "parameters": [
+          {
+            "name": "exam_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "student_username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Student responses"
+          }
+        }
+      }
     },
     "/api/exams/{exam_id}/submissions/export/summary": {
-      "get": {}
+      "get": {
+        "parameters": [
+          {
+            "name": "exam_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Summary export"
+          }
+        }
+      }
     },
     "/api/exams/{exam_id}/submissions/export/full": {
-      "get": {}
+      "get": {
+        "parameters": [
+          {
+            "name": "exam_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Full export"
+          }
+        }
+      }
     },
     "/api/exams/parse_paper": {
-      "post": {}
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "exam_id",
+                  "question_paper"
+                ],
+                "properties": {
+                  "exam_id": {
+                    "oneOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "question_paper": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Parsed paper"
+          }
+        }
+      }
     },
     "/api/exams/paper/{exam_id}": {
-      "put": {}
+      "put": {
+        "parameters": [
+          {
+            "name": "exam_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sections"
+                ],
+                "properties": {
+                  "sections": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "name",
+                        "questions"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "instructions": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "questions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Paper updated"
+          }
+        }
+      }
     },
     "/api/exams/questions/{exam_id}": {
-      "get": {}
+      "get": {
+        "parameters": [
+          {
+            "name": "exam_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exam questions"
+          }
+        }
+      }
     },
     "/api/users": {
-      "get": {},
-      "post": {}
+      "get": {
+        "responses": {
+          "200": {
+            "description": "User list"
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "role"
+                ],
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "student",
+                      "admin"
+                    ]
+                  },
+                  "username": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "roll_number": {
+                    "type": "string"
+                  },
+                  "dob": {
+                    "type": "string"
+                  },
+                  "email_id": {
+                    "type": "string"
+                  },
+                  "phone_number": {
+                    "type": "string"
+                  },
+                  "assigned_exam_id": {
+                    "type": "integer",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created"
+          }
+        }
+      }
     },
     "/api/users/{username}": {
-      "put": {}
+      "put": {
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "roll_number": {
+                    "type": "string"
+                  },
+                  "dob": {
+                    "type": "string"
+                  },
+                  "email_id": {
+                    "type": "string"
+                  },
+                  "phone_number": {
+                    "type": "string"
+                  },
+                  "assigned_exam_id": {
+                    "type": "integer",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated"
+          }
+        }
+      }
     },
     "/api/users/export/students": {
-      "get": {}
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Student export"
+          }
+        }
+      }
     },
     "/api/users/import/students": {
-      "post": {}
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "users_sheet"
+                ],
+                "properties": {
+                  "users_sheet": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Students imported"
+          }
+        }
+      }
     },
     "/api/student/exam_info": {
-      "get": {}
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Assigned exam info"
+          }
+        }
+      }
     },
     "/api/student/start_exam": {
-      "post": {}
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Exam session start"
+          }
+        }
+      }
     },
     "/api/student/save_response": {
-      "post": {}
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "question_id"
+                ],
+                "properties": {
+                  "question_id": {
+                    "type": "integer"
+                  },
+                  "selected_option": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "a",
+                          "b",
+                          "c",
+                          "d"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response saved"
+          }
+        }
+      }
     },
     "/api/student/submit": {
-      "post": {}
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Exam submitted"
+          }
+        }
+      }
     }
   },
   "components": {

@@ -84,6 +84,14 @@ CREATE TABLE test_sessions (
     CHECK (total_marks IS NULL or status = 'submitted')
 );
 
+CREATE TABLE exam_aliases (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    exam_id INT NOT NULL,
+    alias VARCHAR(100) NOT NULL,
+    FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE,
+    UNIQUE (alias)
+);
+
 CREATE TABLE student_response (
     id INT AUTO_INCREMENT PRIMARY KEY,
     question_id INT NOT NULL,
